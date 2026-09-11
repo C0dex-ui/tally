@@ -1,38 +1,38 @@
 :root {
-  --bg: #f6f1e8;
-  --bg-elev: #fffcf7;
-  --ink: #1a2418;
-  --muted: #5c6b62;
-  --line: #e4ddd0;
-  --sage: #2f6b4f;
-  --sage-soft: #e4efe8;
-  --terracotta: #c45c3e;
-  --terracotta-soft: #f8e8e2;
-  --gold: #c9a227;
+  --bg: #f3f5f4;
+  --bg-elev: #ffffff;
+  --ink: #12211b;
+  --muted: #5e6e67;
+  --line: #e3e8e5;
+  --sage: #1f6b4f;
+  --sage-soft: #e7f3ed;
+  --terracotta: #c45038;
+  --terracotta-soft: #f8e9e4;
+  --gold: #b8860b;
   --danger: #b42318;
-  --radius: 16px;
-  --radius-sm: 10px;
+  --radius: 18px;
+  --radius-sm: 12px;
   --nav-h: 64px;
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
-  --shadow: 0 1px 2px rgba(26, 36, 24, 0.04), 0 8px 24px rgba(26, 36, 24, 0.06);
+  --shadow: 0 1px 0 rgba(18, 33, 27, 0.04);
   --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
   --mono: ui-monospace, 'Cascadia Mono', Consolas, monospace;
   color-scheme: light;
 }
 
 html[data-theme='dark'] {
-  --bg: #121a16;
-  --bg-elev: #1a2420;
-  --ink: #f3eee4;
-  --muted: #a8b3ab;
-  --line: #2a3830;
-  --sage: #7cb89a;
-  --sage-soft: #1e3329;
+  --bg: #0e1613;
+  --bg-elev: #17211d;
+  --ink: #eef3f0;
+  --muted: #9aaba3;
+  --line: #24332c;
+  --sage: #6fbf9a;
+  --sage-soft: #1a2e26;
   --terracotta: #e07a5f;
   --terracotta-soft: #3a241e;
   --gold: #e0c36a;
   --danger: #f97066;
-  --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.35);
+  --shadow: none;
   color-scheme: dark;
 }

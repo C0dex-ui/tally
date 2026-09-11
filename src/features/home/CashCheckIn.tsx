@@ -41,7 +41,7 @@ export function CashCheckIn({
 
   return (
     <>
-      <button type="button" className="btn btn-secondary" onClick={openSheet}>
+      <button type="button" className="btn btn-secondary" style={{ marginTop: 4 }} onClick={openSheet}>
         Cash left
       </button>
       {open ? (

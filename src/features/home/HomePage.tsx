@@ -187,7 +187,7 @@ export function HomePage() {
         </div>
       ) : null}
 
-      <section className="card">
+      <section className="card balance-card">
         <p className="page-kicker">
           {leftoverNeg ? 'Overcommitted' : periodMode === 'pay' ? 'On hand' : 'Safe to spend'}
         </p>

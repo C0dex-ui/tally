@@ -13,7 +13,7 @@ export default defineConfig({
         name: 'Tally',
         short_name: 'Tally',
         description: 'Personal budget, on this device.',
-        theme_color: '#2F6B4F',
+        theme_color: '#16352b',
         background_color: '#F6F1E8',
         display: 'standalone',
         orientation: 'portrait',
