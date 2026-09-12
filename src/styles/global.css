@@ -136,6 +136,10 @@ p {
   text-align: left;
 }
 
+.card.tap.list-row {
+  display: flex;
+}
+
 .card.tap:active {
   transform: scale(0.99);
 }
