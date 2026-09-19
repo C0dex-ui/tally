@@ -80,6 +80,8 @@ export function parseBackup(raw: unknown): BackupFile {
     goals: (Array.isArray(data.goals) ? data.goals : []).map((g) => ({
       ...g,
       allowedUses: Array.isArray(g.allowedUses) ? g.allowedUses : [],
+      monthlyContributionCents: g.monthlyContributionCents ?? 0,
+      startedOn: g.startedOn ?? '',
     })),
     goalEvents: (Array.isArray(data.goalEvents) ? data.goalEvents : []).map((e) => ({
       ...e,

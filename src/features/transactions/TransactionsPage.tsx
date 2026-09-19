@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { MonthSwitcher } from '../../components/fields.tsx'
+import { LeftoverLine } from '../../components/LeftoverLine.tsx'
 import { CategoryGlyph, EmptyState, MoneyText } from '../../components/display.tsx'
 import { Icon } from '../../components/Icon.tsx'
 import { useAppState } from '../../context/AppState.tsx'
@@ -16,6 +17,7 @@ export function TransactionsPage() {
     goPrevMonth,
     goNextMonth,
     goThisMonth,
+    periodMode,
   } = useAppState()
   const [q, setQ] = useState('')
 
@@ -44,7 +46,8 @@ export function TransactionsPage() {
     <div className="stack-lg">
       <div>
         <p className="page-kicker">Activity</p>
-        <h1 className="page-title">This paycheck</h1>
+        <h1 className="page-title">{periodMode === 'pay' ? 'This paycheck' : 'This month'}</h1>
+        <LeftoverLine />
       </div>
       <MonthSwitcher
         label={monthLabel}
@@ -65,7 +68,7 @@ export function TransactionsPage() {
       {groups.length === 0 ? (
         <EmptyState
           icon="list"
-          title="Nothing this month"
+          title={periodMode === 'pay' ? 'Nothing this paycheck' : 'Nothing this month'}
           body=""
           action={
             <Link to="/add" className="btn btn-primary">

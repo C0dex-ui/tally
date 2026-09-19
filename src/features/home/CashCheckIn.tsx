@@ -1,36 +1,82 @@
 import { useState } from 'react'
 import { AmountField } from '../../components/fields.tsx'
 import { useAppState } from '../../context/AppState.tsx'
-import { setCashOnHand } from '../../db/ops.ts'
+import { setPeriodCapital } from '../../db/ops.ts'
+import { capitalFromLeftover } from '../../lib/leftover.ts'
 import { centsToMajorString, formatMoney, parseMajorInput } from '../../lib/money.ts'
 
-export function CashCheckIn({
-  onHandCents,
-}: {
-  onHandCents: number
-}) {
-  const { currency, range } = useAppState()
+export function CashCheckIn() {
+  const {
+    currency,
+    range,
+    today,
+    hasCapital,
+    whatsLeftCents,
+    billAllotmentCents,
+    goalAllotmentCents,
+    catchUpCents,
+    livingAfterCountCents,
+    periodMode,
+  } = useAppState()
   const [open, setOpen] = useState(false)
   const [value, setValue] = useState('')
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
 
+  const entered = parseMajorInput(value, currency)
+  const preview =
+    entered == null
+      ? null
+      : hasCapital
+        ? {
+            leftoverCents: entered,
+            capitalCents: capitalFromLeftover({
+              leftoverCents: entered,
+              billAllotmentCents,
+              goalAllotmentCents,
+              catchUpCents,
+              livingAfterCountCents,
+            }),
+          }
+        : {
+            leftoverCents: entered - billAllotmentCents,
+            capitalCents: entered,
+          }
+
   function openSheet() {
-    setValue(onHandCents > 0 ? centsToMajorString(onHandCents, currency) : '')
+    setValue(
+      hasCapital && whatsLeftCents != null
+        ? centsToMajorString(whatsLeftCents, currency)
+        : '',
+    )
     setError('')
     setOpen(true)
   }
 
   async function save() {
     const cents = parseMajorInput(value, currency)
-    if (cents === null) {
-      setError('Enter what you have left.')
+    if (cents === null || cents < 0) {
+      setError(hasCapital ? 'Enter what’s left.' : 'Enter the cash you have.')
       return
     }
     setSaving(true)
     setError('')
     try {
-      await setCashOnHand(cents, range)
+      const capitalCents = hasCapital
+        ? capitalFromLeftover({
+            leftoverCents: cents,
+            billAllotmentCents,
+            goalAllotmentCents,
+            catchUpCents,
+            livingAfterCountCents,
+          })
+        : cents
+      await setPeriodCapital({
+        capitalCents,
+        date: today,
+        periodStart: range.start,
+        keepCountDate: hasCapital,
+      })
       setOpen(false)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not update.')
@@ -49,15 +95,32 @@ export function CashCheckIn({
           <div className="sheet">
             <h2 id="cash-title">Cash left</h2>
             <p className="tiny muted" style={{ margin: '0 0 12px' }}>
-              Now {formatMoney(Math.max(0, onHandCents), currency)}
+              {hasCapital
+                ? `Now ${formatMoney(whatsLeftCents ?? 0, currency)} after bills and goals`
+                : 'Cash you have this paycheck. Bills and goals come out next.'}
             </p>
             <AmountField
               id="cash-left"
-              label="I actually have"
+              label={hasCapital ? 'What’s left' : 'I actually have'}
               value={value}
               onChange={setValue}
               currency={currency}
             />
+            {preview ? (
+              <p className="tiny muted" style={{ marginTop: 8 }}>
+                Leftover {formatMoney(preview.leftoverCents, currency)}
+                {periodMode === 'pay' && billAllotmentCents > 0
+                  ? ` · bills ${formatMoney(billAllotmentCents, currency)}`
+                  : ''}
+                {periodMode === 'pay' && goalAllotmentCents > 0
+                  ? ` · goals ${formatMoney(goalAllotmentCents, currency)}`
+                  : ''}
+                {periodMode === 'pay' && catchUpCents > 0
+                  ? ` · catch-up ${formatMoney(catchUpCents, currency)}`
+                  : ''}
+                {` · capital ${formatMoney(preview.capitalCents, currency)}`}
+              </p>
+            ) : null}
             {error ? <p className="error">{error}</p> : null}
             <div className="btn-row" style={{ marginTop: 16 }}>
               <button type="button" className="btn btn-secondary" onClick={() => setOpen(false)}>

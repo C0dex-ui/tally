@@ -10,6 +10,7 @@ import { CategoryForm } from './features/budget/CategoryForm.tsx'
 import { GoalsPage } from './features/goals/GoalsPage.tsx'
 import { GoalForm } from './features/goals/GoalForm.tsx'
 import { BorrowedPage } from './features/goals/BorrowedPage.tsx'
+import { MissedPage } from './features/goals/MissedPage.tsx'
 import { MorePage } from './features/more/MorePage.tsx'
 import { ResponsibilitiesPage } from './features/responsibilities/ResponsibilitiesPage.tsx'
 import { ResponsibilityForm } from './features/responsibilities/ResponsibilityForm.tsx'
@@ -34,6 +35,7 @@ function Gate() {
         <Route path="budget" element={<BudgetPage />} />
         <Route path="goals" element={<GoalsPage />} />
         <Route path="borrowed" element={<BorrowedPage />} />
+        <Route path="missed" element={<MissedPage />} />
         <Route path="more" element={<MorePage />} />
         <Route path="more/recurring" element={<Navigate to="/responsibilities" replace />} />
         <Route path="more/reports" element={<ReportsPage />} />

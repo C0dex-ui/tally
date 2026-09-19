@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { MonthSwitcher } from '../../components/fields.tsx'
+import { LeftoverLine } from '../../components/LeftoverLine.tsx'
 import {
   CategoryGlyph,
   EmptyState,
@@ -20,6 +21,7 @@ export function BudgetPage() {
     goPrevMonth,
     goNextMonth,
     goThisMonth,
+    periodMode,
   } = useAppState()
 
   const spend = spendByCategory(transactions, range, 'expense')
@@ -34,8 +36,9 @@ export function BudgetPage() {
     <div className="stack-lg">
       <div className="row-between">
         <div>
-          <p className="page-kicker">This paycheck</p>
+          <p className="page-kicker">{periodMode === 'pay' ? 'This paycheck' : 'This month'}</p>
           <h1 className="page-title">Budget</h1>
+          <LeftoverLine />
         </div>
         <Link to="/budget/new" className="btn btn-secondary" style={{ width: 'auto' }}>
           Add

@@ -401,6 +401,42 @@ html[data-theme='dark'] .btn-primary {
   box-shadow: var(--shadow);
 }
 
+.seg-3 {
+  grid-template-columns: 1fr 1fr 1fr;
+}
+
+.check-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.check-row:last-of-type {
+  border-bottom: 0;
+}
+
+.check-row input {
+  margin-top: 4px;
+  width: 18px;
+  height: 18px;
+  accent-color: var(--sage);
+}
+
+.check-row .grow {
+  display: grid;
+  gap: 2px;
+}
+
+.check-row.done {
+  opacity: 0.55;
+}
+
+.check-row.done .strong {
+  text-decoration: line-through;
+}
+
 .chips {
   display: flex;
   flex-wrap: wrap;
@@ -788,6 +824,35 @@ html[data-theme='dark'] .btn-primary {
 
 .balance-card .money-out {
   color: #f0b4a4;
+}
+
+.daily-limit {
+  margin-top: 16px;
+  padding: 14px 14px 12px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.daily-limit .page-kicker {
+  color: rgba(243, 247, 245, 0.72);
+}
+
+.daily-limit-amount {
+  margin-top: 2px;
+  font-size: 1.85rem;
+  font-weight: 650;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.05;
+  color: #fff;
+}
+
+.daily-limit.over .daily-limit-amount {
+  color: #ffc9bb;
+}
+
+.daily-limit .progress {
+  margin-top: 10px;
 }
 
 html[data-theme='dark'] .balance-card {

@@ -21,6 +21,9 @@ export interface Settings {
   savePercent: 5 | 8 | 10
   theme: ThemePref
   onboarded: boolean
+  capitalCents?: number
+  capitalDate?: string
+  capitalPeriodStart?: string
 }
 
 export interface Category {
@@ -75,6 +78,8 @@ export interface Goal {
   color: string
   archived: boolean
   allowedUses: string[]
+  monthlyContributionCents: number
+  startedOn: string
 }
 
 export interface GoalEvent {

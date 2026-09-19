@@ -23,12 +23,6 @@ function isEmergencyName(name: string): boolean {
   return isEmergencyGoal({ name })
 }
 import { DEFAULT_SETTINGS } from './seed.ts'
-import {
-  CASH_CHECK_IN_NOTES,
-  POCKET_CATEGORY_ID,
-  isCashCheckIn,
-  pocketCentsForCashOnHand,
-} from '../lib/cash.ts'
 
 export async function getSettings(): Promise<Settings> {
   const row = await db.settings.get(SETTINGS_ID)
@@ -448,48 +442,22 @@ export async function repayBorrow(
   })
 }
 
-export async function setCashOnHand(
-  cashCents: number,
-  range: { start: string; end: string },
-  today = todayISO(),
-): Promise<void> {
-  if (cashCents < 0) throw new Error('Cash cannot be negative.')
-  const txns = await db.transactions.toArray()
-  const inPeriod = txns.filter((t) => inRange(t.date, range.start, range.end))
-  let income = 0
-  let otherExpenses = 0
-  let pocket: Transaction | undefined
-  for (const t of inPeriod) {
-    if (isCashCheckIn(t)) pocket = t
-    else if (t.kind === 'income') income += t.amountCents
-    else otherExpenses += t.amountCents
-  }
-  const { pocketCents, extraCents } = pocketCentsForCashOnHand(
-    income,
-    otherExpenses,
-    cashCents,
-  )
-  if (extraCents > 0) {
-    throw new Error(
-      'More than on hand. Log income first.',
-    )
-  }
-  const date = inRange(today, range.start, range.end) ? today : range.end
-  if (pocketCents === 0) {
-    if (pocket) await db.transactions.delete(pocket.id)
-    return
-  }
-  if (pocket) {
-    await updateTransaction(pocket.id, { amountCents: pocketCents, date })
-    return
-  }
-  await addTransaction({
-    kind: 'expense',
-    amountCents: pocketCents,
-    date,
-    categoryId: POCKET_CATEGORY_ID,
-    payee: 'Pocket',
-    notes: CASH_CHECK_IN_NOTES,
+export async function setPeriodCapital(input: {
+  capitalCents: number
+  date: string
+  periodStart: string
+  keepCountDate?: boolean
+}): Promise<void> {
+  if (input.capitalCents < 0) throw new Error('Cash cannot be negative.')
+  const current = await getSettings()
+  const keepDate =
+    input.keepCountDate &&
+    current.capitalPeriodStart === input.periodStart &&
+    current.capitalDate
+  await updateSettings({
+    capitalCents: input.capitalCents,
+    capitalDate: keepDate || input.date,
+    capitalPeriodStart: input.periodStart,
   })
 }
 

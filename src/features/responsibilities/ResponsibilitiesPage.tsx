@@ -12,10 +12,7 @@ import {
 import { formatMoney } from '../../lib/money.ts'
 import { formatShortDate } from '../../lib/dates.ts'
 import {
-  billPaymentsInPeriod,
-  billShareBurden,
   dueDateForPeriod,
-  monthlyExpenseTotal,
   paycheckBillShare,
   paymentInPeriod,
   responsibilityCounts,
@@ -37,6 +34,8 @@ export function ResponsibilitiesPage() {
     goNextMonth,
     goThisMonth,
     periodMode,
+    billAllotmentCents,
+    monthlyBillsCents,
   } = useAppState()
 
   const active = recurring.filter((r) => r.active)
@@ -54,16 +53,12 @@ export function ResponsibilitiesPage() {
   ).filter((r) => statusForPeriod(r, transactions, recurringSkips, range) !== 'not_due')
   const unpaid = unpaidExpenseCents(active, transactions, recurringSkips, range)
   const counts = responsibilityCounts(active, transactions, recurringSkips, range)
-  const monthlyBills = monthlyExpenseTotal(active)
-  const billShare = paycheckBillShare(monthlyBills)
-  const billsPaid = billPaymentsInPeriod(active, transactions, range)
-  const shareLeft = billShareBurden(billShare, billsPaid)
 
   return (
     <div className="stack-lg">
       <div className="row-between">
         <div>
-          <p className="page-kicker">This paycheck</p>
+          <p className="page-kicker">{periodMode === 'pay' ? 'This paycheck' : 'This month'}</p>
           <h1 className="page-title">Bills</h1>
         </div>
         <Link to="/responsibilities/new" className="btn btn-secondary" style={{ width: 'auto' }}>
@@ -91,14 +86,14 @@ export function ResponsibilitiesPage() {
       ) : (
         <section className="card">
           <p className="page-kicker">
-            {periodMode === 'pay' ? 'This payday' : 'Still due'}
+            {periodMode === 'pay' ? 'Set aside this paycheck' : 'Still due'}
           </p>
-          <p className={`hero-amount ${ (periodMode === 'pay' ? shareLeft : unpaid) > 0 ? 'neg' : 'pos'}`}>
-            {formatMoney(periodMode === 'pay' ? shareLeft : unpaid, currency)}
+          <p className={`hero-amount ${(periodMode === 'pay' ? billAllotmentCents : unpaid) > 0 ? 'neg' : 'pos'}`}>
+            {formatMoney(periodMode === 'pay' ? billAllotmentCents : unpaid, currency)}
           </p>
           <p className="tiny muted" style={{ marginTop: 8 }}>
             {periodMode === 'pay'
-              ? `${formatMoney(billShare, currency)} of ${formatMoney(monthlyBills, currency)}/mo`
+              ? `From this paycheck’s cash · ${formatMoney(monthlyBillsCents, currency)}/mo`
               : `${counts.paid} of ${counts.total} marked paid`}
             {counts.skipped > 0 ? ` · ${counts.skipped} skipped` : ''}
           </p>
@@ -114,6 +109,7 @@ export function ResponsibilitiesPage() {
               item={item}
               currency={currency}
               range={range}
+              periodMode={periodMode}
               category={categoryMap.get(item.categoryId)}
               status={statusForPeriod(item, transactions, recurringSkips, range)}
               paymentId={paymentInPeriod(item.id, transactions, range)?.id}
@@ -131,6 +127,7 @@ export function ResponsibilitiesPage() {
               item={item}
               currency={currency}
               range={range}
+              periodMode={periodMode}
               category={categoryMap.get(item.categoryId)}
               status={statusForPeriod(item, transactions, recurringSkips, range)}
               paymentId={paymentInPeriod(item.id, transactions, range)?.id}
@@ -146,6 +143,7 @@ function ResponsibilityRow({
   item,
   currency,
   range,
+  periodMode,
   category,
   status,
   paymentId,
@@ -160,11 +158,16 @@ function ResponsibilityRow({
   }
   currency: string
   range: { start: string; end: string }
+  periodMode: 'pay' | 'month'
   category: Parameters<typeof CategoryGlyph>[0]['category']
   status: 'paid' | 'unpaid' | 'skipped' | 'not_due'
   paymentId?: string
 }) {
   const due = dueDateForPeriod(item.dueDay, range)
+  const setAside = paycheckBillShare(item.amountCents)
+  const showSetAside = periodMode === 'pay' && item.kind === 'expense'
+  const statusLabel =
+    status === 'paid' ? 'Paid' : status === 'skipped' ? 'Not this month' : `Due ${formatShortDate(due)}`
   return (
     <div>
       <Link to={`/responsibilities/${item.id}`} className="list-row">
@@ -172,20 +175,14 @@ function ResponsibilityRow({
         <div className="grow">
           <div className="strong ellipsis">{item.name}</div>
           <div className="tiny muted">
-            {status === 'paid'
-              ? 'Paid'
-              : status === 'skipped'
-                ? 'Not this month'
-                : `Due ${formatShortDate(due)}${
-                    item.kind === 'expense'
-                      ? ` · ${formatMoney(paycheckBillShare(item.amountCents), currency)} this payday`
-                      : ''
-                  }`}
+            {showSetAside
+              ? `${statusLabel} · Set aside ${formatMoney(setAside, currency)} this paycheck · ${formatMoney(item.amountCents, currency)}/mo`
+              : statusLabel}
           </div>
         </div>
         {status === 'paid' ? <Icon name="check" size={18} /> : null}
         <MoneyText
-          cents={item.amountCents}
+          cents={showSetAside ? setAside : item.amountCents}
           currency={currency}
           tone={item.kind === 'income' ? 'in' : 'out'}
         />

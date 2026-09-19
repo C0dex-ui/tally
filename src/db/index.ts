@@ -9,7 +9,7 @@ import type {
   Settings,
   Transaction,
 } from './types.ts'
-import { DEFAULT_CATEGORIES, DEFAULT_SETTINGS } from './seed.ts'
+import { DEFAULT_CATEGORIES, DEFAULT_SETTINGS, LEGACY_EXPENSE_IDS } from './seed.ts'
 import { dueDayFromIso } from '../lib/responsibilities.ts'
 
 export class BudgetDB extends Dexie {
@@ -103,6 +103,41 @@ export class BudgetDB extends Dexie {
       goals: 'id, archived',
       goalEvents: 'id, goalId, date',
       fundBorrows: 'id, goalId, date, remainingCents',
+    })
+    this.version(8).upgrade(async (trans) => {
+      await trans
+        .table('settings')
+        .toCollection()
+        .modify(
+          (row: {
+            capitalCents?: number
+            capitalDate?: string
+            capitalPeriodStart?: string
+          }) => {
+            if (row.capitalDate == null) row.capitalDate = ''
+            if (row.capitalPeriodStart == null) row.capitalPeriodStart = ''
+          },
+        )
+    })
+    this.version(9).upgrade(async (trans) => {
+      const cats = trans.table('categories')
+      const legacy = new Set<string>(LEGACY_EXPENSE_IDS)
+      await cats.toCollection().modify((row: { id: string; archived?: boolean }) => {
+        if (legacy.has(row.id)) row.archived = true
+      })
+      for (const category of DEFAULT_CATEGORIES) {
+        const exists = await cats.get(category.id)
+        if (!exists) await cats.put(category)
+      }
+    })
+    this.version(10).upgrade(async (trans) => {
+      await trans
+        .table('goals')
+        .toCollection()
+        .modify((row: { monthlyContributionCents?: number; startedOn?: string }) => {
+          if (row.monthlyContributionCents == null) row.monthlyContributionCents = 0
+          if (!row.startedOn) row.startedOn = ''
+        })
     })
   }
 }

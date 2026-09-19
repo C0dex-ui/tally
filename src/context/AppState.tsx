@@ -19,7 +19,7 @@ import type {
   Settings,
   Transaction,
 } from '../db/types.ts'
-import { dueDayFromIso } from '../lib/responsibilities.ts'
+import { dueDayFromIso, monthlyExpenseTotal, paycheckBillShare } from '../lib/responsibilities.ts'
 import { DEFAULT_SETTINGS } from '../db/seed.ts'
 import {
   addDays,
@@ -32,6 +32,9 @@ import {
   formatPeriodLabel,
   payPeriodRangeForDate,
 } from '../lib/payPeriod.ts'
+import { clampSavePercent, dailyBudget, livingSpendOnDate, livingSpendOnOrAfter } from '../lib/daily.ts'
+import { goalAllotmentCents, goalCatchUpThisPeriod } from '../lib/goals.ts'
+import { hasPeriodCapital, whatsLeftFromCapital } from '../lib/leftover.ts'
 
 interface AppStateValue {
   ready: boolean
@@ -60,6 +63,18 @@ interface AppStateValue {
   goThisMonth: () => void
   justLogged: AutoLogResult['logged']
   dismissLogged: () => void
+  hasCapital: boolean
+  capitalCents: number
+  billAllotmentCents: number
+  monthlyBillsCents: number
+  goalAllotmentCents: number
+  catchUpCents: number
+  livingAfterCountCents: number
+  whatsLeftCents: number | null
+  dailyMaxCents: number
+  todayLivingCents: number
+  todayOver: boolean
+  savePercent: 5 | 8 | 10
 }
 
 const AppStateContext = createContext<AppStateValue | null>(null)
@@ -116,6 +131,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       goalsRaw.map((g) => ({
         ...g,
         allowedUses: Array.isArray(g.allowedUses) ? g.allowedUses : [],
+        monthlyContributionCents: g.monthlyContributionCents ?? 0,
+        startedOn: g.startedOn ?? '',
       })),
     [goalsRaw],
   )
@@ -170,6 +187,74 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     [categories],
   )
 
+  const leftover = useMemo(() => {
+    const activeBills = recurring.filter((r) => r.active)
+    const monthlyBillsCents = monthlyExpenseTotal(activeBills)
+    const billAllotmentCents =
+      periodMode === 'pay' ? paycheckBillShare(monthlyBillsCents) : 0
+    const goalReserveCents = periodMode === 'pay' ? goalAllotmentCents(goals) : 0
+    const catchUpCents =
+      periodMode === 'pay' ? goalCatchUpThisPeriod(goals, goalEvents, range) : 0
+    const hasCapital = hasPeriodCapital(settings, range.start)
+    const capitalCents = hasCapital ? (settings.capitalCents ?? 0) : 0
+    const livingAfterCountCents = hasCapital
+      ? livingSpendOnOrAfter(
+          transactions,
+          settings.capitalDate || range.start,
+          range,
+        )
+      : 0
+    const whatsLeftCents = hasCapital
+      ? whatsLeftFromCapital({
+          capitalCents,
+          billAllotmentCents,
+          goalAllotmentCents: goalReserveCents,
+          catchUpCents,
+          livingAfterCountCents,
+        })
+      : null
+    const todayLivingCents = livingSpendOnDate(transactions, today)
+    const savePercent = clampSavePercent(settings.savePercent ?? 10)
+    const leftoverBeforeToday =
+      whatsLeftCents == null
+        ? 0
+        : whatsLeftCents +
+          (settings.capitalDate && today >= settings.capitalDate ? todayLivingCents : 0)
+    const daily = hasCapital
+      ? dailyBudget({
+          leftoverBeforeTodayCents: leftoverBeforeToday,
+          savePercent,
+          daysUntilPayday,
+        })
+      : { dailyMaxCents: 0, floorCents: 0, spendableCents: 0, days: daysUntilPayday }
+    const todayOver =
+      hasCapital && todayLivingCents > daily.dailyMaxCents && daily.dailyMaxCents >= 0
+    return {
+      hasCapital,
+      capitalCents,
+      billAllotmentCents,
+      monthlyBillsCents,
+      goalAllotmentCents: goalReserveCents,
+      catchUpCents,
+      livingAfterCountCents,
+      whatsLeftCents,
+      dailyMaxCents: daily.dailyMaxCents,
+      todayLivingCents,
+      todayOver,
+      savePercent,
+    }
+  }, [
+    recurring,
+    periodMode,
+    settings,
+    range,
+    transactions,
+    goals,
+    goalEvents,
+    today,
+    daysUntilPayday,
+  ])
+
   const value: AppStateValue = {
     ready: seeded,
     settings,
@@ -197,6 +282,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     goThisMonth: () => setAnchorISO(todayISO()),
     justLogged,
     dismissLogged: () => setJustLogged([]),
+    ...leftover,
   }
 
   return <AppStateContext.Provider value={value}>{children}</AppStateContext.Provider>

@@ -11,30 +11,18 @@ import {
 import { useAppState } from '../../context/AppState.tsx'
 import { monthSummary, overLimitCount, spendByCategory } from '../../lib/budget.ts'
 import { addDays, formatShortDate, inRange, lastNMonthRanges } from '../../lib/dates.ts'
-import { daysUntil, formatPeriodTick, lastNPayPeriods } from '../../lib/payPeriod.ts'
+import { formatPeriodTick, lastNPayPeriods } from '../../lib/payPeriod.ts'
 import { centsToMajor, formatMoney, majorToCents } from '../../lib/money.ts'
 import { markResponsibilityPaid } from '../../db/ops.ts'
 import { CashCheckIn } from './CashCheckIn.tsx'
 import {
-  billPaymentsInPeriod,
-  billShareBurden,
   dueDateForPeriod,
-  monthlyExpenseTotal,
-  paycheckBillShare,
   responsibilityCounts,
-  safeToSpendCents,
   sortResponsibilities,
   statusForPeriod,
   unpaidExpenseCents,
 } from '../../lib/responsibilities.ts'
-import { isEmergencyGoal, lastUse } from '../../lib/goals.ts'
-import {
-  clampSavePercent,
-  dailyBudget,
-  livingPoolCents,
-  livingSpendInRange,
-  livingSpendOnDate,
-} from '../../lib/daily.ts'
+import { goalPaycheckSetAside, isEmergencyGoal, lastUse } from '../../lib/goals.ts'
 
 export function HomePage() {
   const {
@@ -59,6 +47,17 @@ export function HomePage() {
     payday2,
     today,
     settings,
+    hasCapital,
+    whatsLeftCents,
+    billAllotmentCents,
+    monthlyBillsCents,
+    goalAllotmentCents,
+    catchUpCents,
+    dailyMaxCents,
+    todayLivingCents,
+    todayOver,
+    savePercent,
+    daysUntilPayday,
   } = useAppState()
 
   const summary = monthSummary(transactions, range, goalEvents)
@@ -95,23 +94,11 @@ export function HomePage() {
   })
 
   const activeBills = recurring.filter((r) => r.active)
-  const monthlyBills = monthlyExpenseTotal(activeBills)
-  const billShare = paycheckBillShare(monthlyBills)
-  const billsPaid = billPaymentsInPeriod(activeBills, transactions, range)
   const unpaidBills = unpaidExpenseCents(
     activeBills,
     transactions,
     recurringSkips,
     range,
-  )
-  const burden =
-    periodMode === 'pay'
-      ? billShareBurden(billShare, billsPaid)
-      : unpaidBills
-  const safe = safeToSpendCents(
-    summary.incomeCents,
-    summary.expenseCents,
-    burden,
   )
   const billCounts = responsibilityCounts(
     activeBills,
@@ -135,30 +122,10 @@ export function HomePage() {
       return ae - be
     })
     .slice(0, 3)
-  const leftoverNeg = safe < 0
+  const leftoverNeg = (whatsLeftCents ?? 0) < 0
   const hasActivity = transactions.some((t) => inRange(t.date, range.start, range.end))
   const nextPaydayDate = range.end ? addDays(range.end, 1) : ''
-  const daysLeft = nextPaydayDate ? daysUntil(today, nextPaydayDate) : 0
-  const savePercent = clampSavePercent(settings.savePercent ?? 10)
-  const monthlyBillIds = new Set(
-    activeBills
-      .filter((b) => b.kind === 'expense' && (b.frequency ?? 'monthly') === 'monthly')
-      .map((b) => b.id),
-  )
-  const todayLiving = livingSpendOnDate(transactions, today, monthlyBillIds)
-  const livingPeriod = livingSpendInRange(transactions, range, monthlyBillIds)
-  const livingExToday = Math.max(0, livingPeriod - todayLiving)
-  const daily = dailyBudget({
-    onHandBeforeTodayLivingCents: livingPoolCents(
-      summary.incomeCents,
-      periodMode === 'pay' ? billShare : 0,
-      livingExToday,
-    ),
-    incomeCents: summary.incomeCents,
-    savePercent,
-    daysUntilPayday: daysLeft,
-  })
-  const todayOver = todayLiving > daily.dailyMaxCents && daily.dailyMaxCents >= 0
+  const daysLeft = daysUntilPayday
 
   return (
     <div className="stack-lg">
@@ -189,11 +156,19 @@ export function HomePage() {
 
       <section className="card balance-card">
         <p className="page-kicker">
-          {leftoverNeg ? 'Overcommitted' : periodMode === 'pay' ? 'On hand' : 'Safe to spend'}
+          {!hasCapital
+            ? 'What’s left'
+            : leftoverNeg
+              ? 'Overcommitted'
+              : 'What’s left'}
         </p>
-        <p className={`hero-amount ${leftoverNeg ? 'neg' : 'pos'}`}>
-          {formatMoney(Math.abs(safe), currency)}
-        </p>
+        {hasCapital && whatsLeftCents != null ? (
+          <p className={`hero-amount ${leftoverNeg ? 'neg' : 'pos'}`}>
+            {formatMoney(Math.abs(whatsLeftCents), currency)}
+          </p>
+        ) : (
+          <p className="hero-amount muted">—</p>
+        )}
         {periodMode === 'pay' && nextPaydayDate && today <= range.end ? (
           <p className="tiny muted" style={{ marginTop: 6 }}>
             {daysLeft === 0
@@ -201,37 +176,52 @@ export function HomePage() {
               : `${daysLeft}d to payday · ${formatShortDate(nextPaydayDate)}`}
           </p>
         ) : null}
-        {periodMode === 'pay' && monthlyBills > 0 ? (
+        {periodMode === 'pay' &&
+        (monthlyBillsCents > 0 || goalAllotmentCents > 0 || catchUpCents > 0) ? (
           <p className="tiny muted" style={{ marginTop: 6 }}>
-            {burden > 0
-              ? `Bills ${formatMoney(burden, currency)} of ${formatMoney(billShare, currency)} · ${formatMoney(monthlyBills, currency)}/mo`
-              : `Bills covered · ${formatMoney(monthlyBills, currency)}/mo`}
+            {[
+              monthlyBillsCents > 0
+                ? `${formatMoney(billAllotmentCents, currency)} bills · ${formatMoney(monthlyBillsCents, currency)}/mo`
+                : null,
+              goalAllotmentCents > 0
+                ? `${formatMoney(goalAllotmentCents, currency)} goals`
+                : null,
+              catchUpCents > 0 ? `${formatMoney(catchUpCents, currency)} catch-up` : null,
+            ]
+              .filter(Boolean)
+              .join(' · ')}
           </p>
         ) : unpaidBills > 0 ? (
           <p className="tiny muted" style={{ marginTop: 6 }}>
             Bills still due {formatMoney(unpaidBills, currency)}
           </p>
         ) : null}
-        {periodMode === 'pay' && summary.incomeCents > 0 && today <= range.end ? (
-          <div style={{ marginTop: 14 }}>
-            <div className="row-between">
-              <span className="tiny strong">Today</span>
-              <span className={`tiny tabular ${todayOver ? 'money-out' : 'muted'}`}>
-                {formatMoney(todayLiving, currency)} of {formatMoney(daily.dailyMaxCents, currency)}
-              </span>
-            </div>
+        {hasCapital && periodMode === 'pay' && today <= range.end ? (
+          <div className={`daily-limit${todayOver ? ' over' : ''}`}>
+            <p className="page-kicker">Daily spend limit</p>
+            <p className="daily-limit-amount">{formatMoney(dailyMaxCents, currency)}</p>
+            <p className="tiny muted" style={{ marginTop: 4 }}>
+              {todayOver
+                ? `Spent ${formatMoney(todayLivingCents, currency)} today · over by ${formatMoney(
+                    todayLivingCents - dailyMaxCents,
+                    currency,
+                  )}`
+                : `Spent ${formatMoney(todayLivingCents, currency)} today · ${daysLeft}d left`}
+            </p>
             <ProgressBar
               value={
-                daily.dailyMaxCents > 0 ? todayLiving / daily.dailyMaxCents : todayLiving > 0 ? 1 : 0
+                dailyMaxCents > 0 ? todayLivingCents / dailyMaxCents : todayLivingCents > 0 ? 1 : 0
               }
               over={todayOver}
             />
             <p className="tiny muted" style={{ marginTop: 6 }}>
-              {daily.dailyMaxCents <= 0
-                ? `Into the ${savePercent}% cushion`
-                : `${savePercent}% held ${formatMoney(daily.floorCents, currency)} · ${daily.days}d`}
+              {savePercent}% held from leftover
             </p>
           </div>
+        ) : !hasCapital ? (
+          <p className="tiny muted" style={{ marginTop: 6 }}>
+            Set cash left to get a daily limit.
+          </p>
         ) : null}
         <div className="stat-grid" style={{ marginTop: 14 }}>
           <div className="stat in">
@@ -251,7 +241,7 @@ export function HomePage() {
           {over === 0 ? 'On track' : `${over} over budget`}
         </p>
         <div style={{ marginTop: 14 }}>
-          <CashCheckIn onHandCents={summary.leftoverCents} />
+          <CashCheckIn />
         </div>
       </section>
 
@@ -323,6 +313,7 @@ export function HomePage() {
           {topGoals.map((g) => {
             const pct = g.targetCents > 0 ? g.savedCents / g.targetCents : 0
             const used = lastUse(goalEvents.filter((e) => e.goalId === g.id))
+            const share = goalPaycheckSetAside(g)
             return (
               <Link key={g.id} to={`/goals/${g.id}`} className="list-row">
                 <CategoryGlyph
@@ -344,6 +335,11 @@ export function HomePage() {
                     <span className="goal-pct">{Math.round(pct * 100)}%</span>
                   </div>
                   <ProgressBar value={pct} />
+                  {share > 0 ? (
+                    <div className="tiny muted" style={{ marginTop: 4 }}>
+                      Set aside {formatMoney(share, currency)} this paycheck
+                    </div>
+                  ) : null}
                   {used ? (
                     <div className="tiny muted" style={{ marginTop: 4 }}>
                       Last use: {used.purpose}

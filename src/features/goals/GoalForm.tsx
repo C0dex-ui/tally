@@ -12,12 +12,16 @@ import {
   updateGoal,
   withdrawFromGoal,
 } from '../../db/ops.ts'
-import { todayISO, formatShortDate } from '../../lib/dates.ts'
+import { todayISO, formatMonthYear, formatShortDate } from '../../lib/dates.ts'
 import { centsToMajorString, formatMoney, parseMajorInput } from '../../lib/money.ts'
 import {
   DEFAULT_EMERGENCY_USES,
+  formatTimeToGoal,
   isEmergencyGoal,
+  paycheckGoalShare,
+  remainingGoalCents,
   sortGoalEventsNewestFirst,
+  timeToGoal,
   usesForGoal,
 } from '../../lib/goals.ts'
 
@@ -38,6 +42,12 @@ export function GoalForm() {
     existing ? centsToMajorString(existing.targetCents, currency) : '',
   )
   const [deadline, setDeadline] = useState(existing?.deadline ?? '')
+  const [monthly, setMonthly] = useState(
+    existing?.monthlyContributionCents
+      ? centsToMajorString(existing.monthlyContributionCents, currency)
+      : '',
+  )
+  const [startedOn, setStartedOn] = useState(existing?.startedOn || todayISO())
   const [color, setColor] = useState(existing?.color ?? COLORS[0])
   const [move, setMove] = useState('')
   const [notes, setNotes] = useState('')
@@ -50,6 +60,24 @@ export function GoalForm() {
   const events = existing
     ? sortGoalEventsNewestFirst(goalEvents.filter((e) => e.goalId === existing.id))
     : []
+  const previewTarget = parseMajorInput(target, currency)
+  const previewMonthly = monthly.trim() ? parseMajorInput(monthly, currency) : 0
+  const previewRemaining =
+    previewTarget != null && previewTarget > 0
+      ? existing
+        ? remainingGoalCents({ targetCents: previewTarget, savedCents: existing.savedCents })
+        : previewTarget
+      : 0
+  const previewShare =
+    previewMonthly != null && previewMonthly > 0 ? paycheckGoalShare(previewMonthly) : 0
+  const previewEta =
+    previewMonthly != null && previewMonthly > 0
+      ? timeToGoal({
+          remainingCents: previewRemaining,
+          monthlyCents: previewMonthly,
+          fromISO: todayISO(),
+        })
+      : null
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault()
@@ -62,6 +90,11 @@ export function GoalForm() {
       setError('Enter a target greater than zero.')
       return
     }
+    const monthlyCents = monthly.trim() ? parseMajorInput(monthly, currency) : 0
+    if (monthlyCents === null || monthlyCents < 0) {
+      setError('Enter a monthly amount, or leave it blank.')
+      return
+    }
     try {
       if (existing) {
         await updateGoal(existing.id, {
@@ -70,6 +103,8 @@ export function GoalForm() {
           deadline: deadline || undefined,
           color,
           allowedUses: existing.allowedUses,
+          monthlyContributionCents: monthlyCents,
+          startedOn: startedOn || todayISO(),
         })
         navigate('/goals')
       } else {
@@ -78,6 +113,8 @@ export function GoalForm() {
           targetCents: cents,
           deadline: deadline || undefined,
           color,
+          monthlyContributionCents: monthlyCents,
+          startedOn: startedOn || todayISO(),
         })
         navigate(`/goals/${newId}`)
       }
@@ -285,6 +322,34 @@ export function GoalForm() {
           onChange={setTarget}
           currency={currency}
         />
+        <AmountField
+          id="monthly"
+          label="Monthly amount"
+          value={monthly}
+          onChange={setMonthly}
+          currency={currency}
+        />
+        {previewShare > 0 ? (
+          <p className="tiny muted">
+            Set aside {formatMoney(Math.min(previewShare, previewRemaining), currency)} this
+            paycheck
+            {previewEta ? ` · ${formatTimeToGoal(previewEta)}` : ''}
+            {previewEta?.reachISO ? ` · ${formatMonthYear(previewEta.reachISO)}` : ''}
+          </p>
+        ) : (
+          <p className="tiny muted">
+            Split across two paychecks. Reserved from leftover like bills.
+          </p>
+        )}
+        <div className="field">
+          <label htmlFor="started-on">Started</label>
+          <input
+            id="started-on"
+            type="date"
+            value={startedOn}
+            onChange={(e) => setStartedOn(e.target.value)}
+          />
+        </div>
         <div className="field">
           <label htmlFor="deadline">Deadline (optional)</label>
           <input

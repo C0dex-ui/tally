@@ -10,20 +10,22 @@ import { centsToMajorString, parseMajorInput } from '../../lib/money.ts'
 import type { MoneyKind } from '../../db/types.ts'
 
 const ICONS: IconName[] = [
+  'creditCard',
+  'wifi',
+  'shield',
+  'piggy',
+  'heart',
+  'device',
+  'zap',
+  'utensils',
+  'gas',
   'home',
   'cart',
-  'utensils',
-  'car',
-  'zap',
-  'heart',
-  'smile',
-  'bag',
-  'repeat',
   'bank',
-  'plus',
-  'more',
   'bill',
+  'wallet',
   'target',
+  'more',
 ]
 
 const COLORS = [

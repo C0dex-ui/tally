@@ -3,7 +3,8 @@ import { Icon, type IconName } from '../../components/Icon.tsx'
 
 const links: { to: string; title: string; body: string; icon: IconName }[] = [
   { to: '/goals', title: 'Goals', body: 'Emergency fund', icon: 'target' },
-  { to: '/borrowed', title: 'Borrowed', body: 'Pay back the fund', icon: 'wallet' },
+  { to: '/borrowed', title: 'Borrowed', body: 'Checklist of what you borrowed', icon: 'wallet' },
+  { to: '/missed', title: 'Missed', body: 'Catch up short months', icon: 'calendar' },
   { to: '/more/reports', title: 'Reports', body: 'Trends', icon: 'pie' },
   { to: '/more/settings', title: 'Settings', body: 'Backup, theme', icon: 'settings' },
 ]

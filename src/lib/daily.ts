@@ -11,14 +11,16 @@ type SpendRow = {
   categoryId: string
 }
 
-export function isLivingPurchase(
-  t: SpendRow,
-  monthlyBillIds: Set<string>,
-): boolean {
+export const DAILY_SPEND_CATEGORY_IDS = ['food', 'gasoline', 'others'] as const
+
+export function isDailySpend(t: SpendRow): boolean {
   if (t.kind !== 'expense') return false
   if (isCashCheckIn(t)) return false
-  if (t.recurringId && monthlyBillIds.has(t.recurringId)) return false
-  return true
+  return (DAILY_SPEND_CATEGORY_IDS as readonly string[]).includes(t.categoryId)
+}
+
+export function isLivingPurchase(t: SpendRow): boolean {
+  return isDailySpend(t)
 }
 
 export const SAVE_PERCENTS = [5, 8, 10] as const
@@ -29,9 +31,9 @@ export function clampSavePercent(n: number): SavePercent {
   return 10
 }
 
-export function saveFloorCents(incomeCents: number, savePercent: number): number {
+export function saveFloorCents(poolCents: number, savePercent: number): number {
   const p = clampSavePercent(savePercent)
-  return Math.round((Math.max(0, incomeCents) * p) / 100)
+  return Math.round((Math.max(0, poolCents) * p) / 100)
 }
 
 export function daysForDailyCap(daysUntilPayday: number): number {
@@ -39,8 +41,7 @@ export function daysForDailyCap(daysUntilPayday: number): number {
 }
 
 export function dailyBudget(input: {
-  onHandBeforeTodayLivingCents: number
-  incomeCents: number
+  leftoverBeforeTodayCents: number
   savePercent: number
   daysUntilPayday: number
 }): {
@@ -49,8 +50,9 @@ export function dailyBudget(input: {
   days: number
   dailyMaxCents: number
 } {
-  const floorCents = saveFloorCents(input.incomeCents, input.savePercent)
-  const spendableCents = Math.max(0, input.onHandBeforeTodayLivingCents - floorCents)
+  const leftover = input.leftoverBeforeTodayCents
+  const floorCents = saveFloorCents(leftover, input.savePercent)
+  const spendableCents = Math.max(0, leftover - floorCents)
   const days = daysForDailyCap(input.daysUntilPayday)
   const dailyMaxCents = Math.floor(spendableCents / days)
   return { floorCents, spendableCents, days, dailyMaxCents }
@@ -59,12 +61,11 @@ export function dailyBudget(input: {
 export function livingSpendOnDate(
   transactions: SpendRow[],
   dateISO: string,
-  monthlyBillIds: Set<string>,
 ): number {
   let sum = 0
   for (const t of transactions) {
     if (t.date !== dateISO) continue
-    if (!isLivingPurchase(t, monthlyBillIds)) continue
+    if (!isDailySpend(t)) continue
     sum += t.amountCents
   }
   return sum
@@ -73,12 +74,26 @@ export function livingSpendOnDate(
 export function livingSpendInRange(
   transactions: SpendRow[],
   range: { start: string; end: string },
-  monthlyBillIds: Set<string>,
 ): number {
   let sum = 0
   for (const t of transactions) {
     if (!inRange(t.date, range.start, range.end)) continue
-    if (!isLivingPurchase(t, monthlyBillIds)) continue
+    if (!isDailySpend(t)) continue
+    sum += t.amountCents
+  }
+  return sum
+}
+
+export function livingSpendOnOrAfter(
+  transactions: SpendRow[],
+  fromISO: string,
+  range: { start: string; end: string },
+): number {
+  let sum = 0
+  for (const t of transactions) {
+    if (!inRange(t.date, range.start, range.end)) continue
+    if (t.date < fromISO) continue
+    if (!isDailySpend(t)) continue
     sum += t.amountCents
   }
   return sum

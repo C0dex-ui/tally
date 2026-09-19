@@ -25,6 +25,7 @@ export function ReportsPage() {
     goalEvents,
     recurring,
     recurringSkips,
+    whatsLeftCents,
   } = useAppState()
 
   const summary = monthSummary(transactions, range, goalEvents)
@@ -101,8 +102,12 @@ export function ReportsPage() {
                 <span>Out</span>
               </div>
               <div className="stat">
-                <b>{formatMoney(summary.leftoverCents, currency)}</b>
-                <span>On hand</span>
+                <b>
+                  {whatsLeftCents == null
+                    ? '—'
+                    : formatMoney(whatsLeftCents, currency)}
+                </b>
+                <span>What’s left</span>
               </div>
             </div>
           </section>

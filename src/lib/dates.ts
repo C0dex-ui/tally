@@ -86,6 +86,23 @@ export function formatChartMonth(iso: string): string {
   return parseISODate(iso).toLocaleDateString(undefined, { month: 'short' })
 }
 
+export function formatMonthKey(key: string): string {
+  const iso = /^\d{4}-\d{2}$/.test(key) ? `${key}-01` : key
+  if (typeof iso !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(iso)) return key
+  return parseISODate(iso).toLocaleDateString(undefined, {
+    month: 'long',
+    year: 'numeric',
+  })
+}
+
+export function formatMonthYear(iso: string): string {
+  if (typeof iso !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(iso)) return ''
+  return parseISODate(iso).toLocaleDateString(undefined, {
+    month: 'short',
+    year: 'numeric',
+  })
+}
+
 export function lastNMonthRanges(
   anchorISO: string,
   monthStartDay: number,

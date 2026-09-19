@@ -3,11 +3,18 @@ import { FundTabs } from './FundTabs.tsx'
 import { EmptyState, MoneyText, ProgressBar } from '../../components/display.tsx'
 import { useAppState } from '../../context/AppState.tsx'
 import { formatMoney } from '../../lib/money.ts'
-import { formatShortDate } from '../../lib/dates.ts'
-import { isEmergencyGoal, lastUse } from '../../lib/goals.ts'
+import { formatMonthYear, formatShortDate } from '../../lib/dates.ts'
+import {
+  formatTimeToGoal,
+  goalPaycheckSetAside,
+  isEmergencyGoal,
+  lastUse,
+  remainingGoalCents,
+  timeToGoal,
+} from '../../lib/goals.ts'
 
 export function GoalsPage() {
-  const { goals, goalEvents, currency } = useAppState()
+  const { goals, goalEvents, currency, today } = useAppState()
   const active = [...goals.filter((g) => !g.archived)].sort((a, b) => {
     const ae = isEmergencyGoal(a) ? 0 : 1
     const be = isEmergencyGoal(b) ? 0 : 1
@@ -48,6 +55,12 @@ export function GoalsPage() {
         active.map((g) => {
           const pct = g.targetCents > 0 ? g.savedCents / g.targetCents : 0
           const used = lastUse(goalEvents.filter((e) => e.goalId === g.id))
+          const share = goalPaycheckSetAside(g)
+          const eta = timeToGoal({
+            remainingCents: remainingGoalCents(g),
+            monthlyCents: g.monthlyContributionCents,
+            fromISO: today,
+          })
           return (
             <Link key={g.id} to={`/goals/${g.id}`} className="card tap">
               <div className="row-between">
@@ -60,6 +73,18 @@ export function GoalsPage() {
                 {formatMoney(g.targetCents, currency)}
                 {g.deadline ? ` · by ${g.deadline}` : ''}
               </p>
+              {share > 0 ? (
+                <p className="tiny muted">
+                  Set aside {formatMoney(share, currency)} this paycheck ·{' '}
+                  {formatMoney(g.monthlyContributionCents, currency)}/mo
+                </p>
+              ) : null}
+              {eta && eta.months > 0 ? (
+                <p className="tiny muted">
+                  {formatTimeToGoal(eta)}
+                  {eta.reachISO ? ` · ${formatMonthYear(eta.reachISO)}` : ''}
+                </p>
+              ) : null}
               {used ? (
                 <p className="tiny muted">
                   Last use: {used.purpose} · {formatShortDate(used.date)}

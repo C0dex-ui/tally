@@ -15,7 +15,8 @@ function moreActive(pathname: string): boolean {
     pathname.startsWith('/more/') ||
     pathname === '/goals' ||
     pathname.startsWith('/goals/') ||
-    pathname === '/borrowed'
+    pathname === '/borrowed' ||
+    pathname === '/missed'
   )
 }
 
