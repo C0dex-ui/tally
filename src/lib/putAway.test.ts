@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { payPeriodsInCalendarMonth } from './payPeriod.ts'
-import { plannedMonthlyCents, plannedPaycheckCents } from './putAway.ts'
+import { plannedMonthlyCents, plannedPaycheckCents, setAsideThisPeriodCents } from './putAway.ts'
 
 const rent = {
   id: 'bills',
@@ -33,6 +33,57 @@ describe('planned put away', () => {
         ],
       ),
     ).toBe(900_000)
+  })
+})
+
+describe('put away audit', () => {
+  const period = '2026-09-16'
+  const pldt = {
+    id: 'pldt',
+    kind: 'expense' as const,
+    amountCents: 170_000,
+    dueDay: 18,
+    active: true,
+    frequency: 'monthly' as const,
+  }
+  const wifi = {
+    id: 'wifi',
+    kind: 'expense' as const,
+    amountCents: 100_000,
+    dueDay: 10,
+    active: true,
+    frequency: 'monthly' as const,
+  }
+  const filler = {
+    id: 'filler',
+    kind: 'expense' as const,
+    amountCents: 2_634_700,
+    dueDay: 1,
+    active: true,
+    frequency: 'monthly' as const,
+  }
+  const bills = [pldt, wifi, filler]
+
+  it('audits ₱850 / ₱14,523.50 after PLDT is set aside', () => {
+    expect(plannedPaycheckCents(bills, [])).toBe(1_452_350)
+    expect(
+      setAsideThisPeriodCents([{ periodStart: period, amountCents: 85_000 }], period),
+    ).toBe(85_000)
+  })
+
+  it('adds only the numerator when a second bill is set aside', () => {
+    const target = plannedPaycheckCents(bills, [])
+    expect(target).toBe(1_452_350)
+    expect(
+      setAsideThisPeriodCents(
+        [
+          { periodStart: period, amountCents: 85_000 },
+          { periodStart: period, amountCents: 50_000 },
+        ],
+        period,
+      ),
+    ).toBe(135_000)
+    expect(plannedPaycheckCents(bills, [])).toBe(target)
   })
 })
 

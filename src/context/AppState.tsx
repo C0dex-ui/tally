@@ -10,6 +10,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { db, ensureSeeded } from '../db/index.ts'
 import { processAutoLog, syncDailyOverForDate, type AutoLogResult } from '../db/ops.ts'
 import type {
+  BillSetAside,
   Category,
   DailyOver,
   FundBorrow,
@@ -21,7 +22,8 @@ import type {
   Transaction,
   Utang,
 } from '../db/types.ts'
-import { dueDayFromIso, monthlyExpenseTotal, paycheckBillShare } from '../lib/responsibilities.ts'
+import { dueDayFromIso, paycheckBillShare } from '../lib/responsibilities.ts'
+import { monthlyBillsForAllotment } from '../lib/billSetAside.ts'
 import { DEFAULT_SETTINGS } from '../db/seed.ts'
 import {
   addDays,
@@ -50,6 +52,7 @@ interface AppStateValue {
   fundBorrows: FundBorrow[]
   utangs: Utang[]
   dailyOvers: DailyOver[]
+  billSetAsides: BillSetAside[]
   categoryMap: Map<string, Category>
   currency: string
   monthStartDay: number
@@ -152,6 +155,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const fundBorrows = useLiveQuery(() => db.fundBorrows.toArray(), []) ?? []
   const utangs = useLiveQuery(() => db.utangs.toArray(), []) ?? []
   const dailyOvers = useLiveQuery(() => db.dailyOvers.toArray(), []) ?? []
+  const billSetAsides = useLiveQuery(() => db.billSetAsides.toArray(), []) ?? []
 
   useEffect(() => {
     const root = document.documentElement
@@ -195,7 +199,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
 
   const leftover = useMemo(() => {
     const activeBills = recurring.filter((r) => r.active)
-    const monthlyBillsCents = monthlyExpenseTotal(activeBills)
+    const monthlyBillsCents = monthlyBillsForAllotment(activeBills, billSetAsides, range.start)
     const billAllotmentCents =
       periodMode === 'pay' ? paycheckBillShare(monthlyBillsCents) : 0
     const goalReserveCents = periodMode === 'pay' ? goalAllotmentCents(goals) : 0
@@ -251,6 +255,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     }
   }, [
     recurring,
+    billSetAsides,
     periodMode,
     settings,
     range,
@@ -278,6 +283,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     fundBorrows,
     utangs,
     dailyOvers,
+    billSetAsides,
     categoryMap,
     currency: settings.currency,
     monthStartDay,

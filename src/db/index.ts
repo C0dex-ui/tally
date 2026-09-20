@@ -1,6 +1,7 @@
 import Dexie, { type Table } from 'dexie'
 import type {
   Category,
+  BillSetAside,
   DailyOver,
   FundBorrow,
   Goal,
@@ -25,6 +26,7 @@ export class BudgetDB extends Dexie {
   fundBorrows!: Table<FundBorrow, string>
   utangs!: Table<Utang, string>
   dailyOvers!: Table<DailyOver, string>
+  billSetAsides!: Table<BillSetAside, string>
 
   constructor() {
     super('tally-budget')
@@ -183,6 +185,19 @@ export class BudgetDB extends Dexie {
         .modify((row: { id: string; archived?: boolean }) => {
           if (extras.has(row.id)) row.archived = false
         })
+    })
+    this.version(15).stores({
+      settings: 'id',
+      categories: 'id, kind, archived, sortOrder',
+      transactions: 'id, date, kind, categoryId, recurringId',
+      recurring: 'id, nextDate, active, kind, dueDay',
+      recurringSkips: 'id, recurringId, periodStart, [recurringId+periodStart]',
+      goals: 'id, archived',
+      goalEvents: 'id, goalId, date',
+      fundBorrows: 'id, goalId, date, remainingCents',
+      utangs: 'id, archived, date',
+      dailyOvers: 'id, date',
+      billSetAsides: 'id, recurringId, periodStart, [recurringId+periodStart]',
     })
   }
 }

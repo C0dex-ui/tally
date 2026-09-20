@@ -3,7 +3,7 @@ import { newId, nowISO } from '../lib/ids.ts'
 import { addDays, addMonthsClamped, inRange, monthRangeForDate, todayISO } from '../lib/dates.ts'
 import { daysUntil, paydayLabel, payPeriodRangeForDate } from '../lib/payPeriod.ts'
 import { advanceNextDate, catchUpDates } from '../lib/recurring.ts'
-import { dueDateForPeriod, dueDayFromIso, isDueInPeriod, monthlyExpenseTotal, paycheckBillShare } from '../lib/responsibilities.ts'
+import { dueDateForPeriod, dueDayFromIso, isDueInPeriod, paycheckBillShare } from '../lib/responsibilities.ts'
 import type {
   Category,
   Goal,
@@ -23,6 +23,7 @@ import {
   requireWithdrawPurpose,
 } from '../lib/goals.ts'
 import { hasPeriodCapital, whatsLeftFromCapital } from '../lib/leftover.ts'
+import { monthlyBillsForAllotment, setAsideAmountCents } from '../lib/billSetAside.ts'
 
 function isEmergencyName(name: string): boolean {
   return isEmergencyGoal({ name })
@@ -452,6 +453,54 @@ export async function repayBorrow(
   })
 }
 
+export async function setAsideBill(recurringId: string, periodStart: string): Promise<void> {
+  const bill = await db.recurring.get(recurringId)
+  if (!bill || !bill.active || bill.kind !== 'expense') throw new Error('Bill not found.')
+  const settings = await getSettings()
+  if (!hasPeriodCapital(settings, periodStart)) throw new Error('Enter cash on hand first.')
+  const existing = await db.billSetAsides
+    .where('[recurringId+periodStart]')
+    .equals([recurringId, periodStart])
+    .first()
+  if (existing) throw new Error('Already set aside this paycheck.')
+  const amountCents = setAsideAmountCents(bill.amountCents)
+  const nextCapital = (settings.capitalCents ?? 0) - amountCents
+  if (nextCapital < 0) throw new Error('Not enough cash to set aside.')
+  await db.transaction('rw', db.billSetAsides, db.settings, async () => {
+    await db.billSetAsides.add({
+      id: newId(),
+      recurringId,
+      periodStart,
+      amountCents,
+    })
+    await setPeriodCapital({
+      capitalCents: nextCapital,
+      date: todayISO(),
+      periodStart,
+      keepCountDate: true,
+    })
+  })
+}
+
+export async function undoSetAsideBill(recurringId: string, periodStart: string): Promise<void> {
+  const row = await db.billSetAsides
+    .where('[recurringId+periodStart]')
+    .equals([recurringId, periodStart])
+    .first()
+  if (!row) return
+  const settings = await getSettings()
+  if (!hasPeriodCapital(settings, periodStart)) throw new Error('Enter cash on hand first.')
+  await db.transaction('rw', db.billSetAsides, db.settings, async () => {
+    await db.billSetAsides.delete(row.id)
+    await setPeriodCapital({
+      capitalCents: (settings.capitalCents ?? 0) + row.amountCents,
+      date: todayISO(),
+      periodStart,
+      keepCountDate: true,
+    })
+  })
+}
+
 export async function setPeriodCapital(input: {
   capitalCents: number
   date: string
@@ -576,7 +625,8 @@ async function currentDailyMaxCents(): Promise<{ hasCapital: boolean; dailyMaxCe
     return { hasCapital: false, dailyMaxCents: 0 }
   }
   const recurring = (await db.recurring.toArray()).filter((r) => r.active)
-  const monthlyBillsCents = monthlyExpenseTotal(recurring)
+  const setAsides = await db.billSetAsides.toArray()
+  const monthlyBillsCents = monthlyBillsForAllotment(recurring, setAsides, range.start)
   const billAllotmentCents = periodMode === 'pay' ? paycheckBillShare(monthlyBillsCents) : 0
   const goals = await db.goals.toArray()
   const goalEvents = await db.goalEvents.toArray()

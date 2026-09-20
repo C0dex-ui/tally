@@ -117,4 +117,11 @@ export interface DailyOver {
   overCents: number
 }
 
+export interface BillSetAside {
+  id: string
+  recurringId: string
+  periodStart: string
+  amountCents: number
+}
+
 export const SETTINGS_ID = 1

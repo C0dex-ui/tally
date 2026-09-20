@@ -27,3 +27,12 @@ export function plannedPaycheckCents(
 ): number {
   return paycheckBillShare(monthlyExpenseTotal(bills)) + goalAllotmentCents(goals)
 }
+
+export function setAsideThisPeriodCents(
+  setAsides: { periodStart: string; amountCents: number }[],
+  periodStart: string,
+): number {
+  return setAsides
+    .filter((row) => row.periodStart === periodStart)
+    .reduce((sum, row) => sum + row.amountCents, 0)
+}

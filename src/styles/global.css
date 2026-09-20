@@ -176,6 +176,36 @@ p {
   color: var(--sage);
 }
 
+.putaway-audit {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: nowrap;
+  gap: 0.28em;
+  margin: 0;
+  font-size: clamp(1.35rem, 6.4vw, 1.85rem);
+  font-weight: 650;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.15;
+  color: var(--terracotta);
+  white-space: nowrap;
+}
+
+.putaway-audit.done {
+  color: var(--sage);
+}
+
+.putaway-audit span {
+  color: var(--muted);
+  font-weight: 550;
+}
+
+.putaway-audit.compact {
+  font-size: 0.95rem;
+  letter-spacing: -0.02em;
+  justify-content: flex-end;
+}
+
 .stat-grid {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;

@@ -35,6 +35,10 @@ export function clampMonthStartDay(day: number): number {
   return Math.min(28, Math.max(1, Math.trunc(day) || 1))
 }
 
+export function billMonthRange(dateISO: string): { start: string; end: string } {
+  return monthRangeForDate(dateISO, 1)
+}
+
 export function monthRangeForDate(
   dateISO: string,
   monthStartDay: number,

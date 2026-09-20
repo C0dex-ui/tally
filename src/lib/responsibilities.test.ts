@@ -106,6 +106,43 @@ describe('statusForPeriod', () => {
     expect(statusForPeriod(laterBill, [], [], firstHalf)).toBe('not_due')
     expect(unpaidExpenseCents([laterBill], [], [], firstHalf)).toBe(0)
   })
+
+  it('stays unpaid for the whole calendar month before the due day', () => {
+    const october = { start: '2026-10-01', end: '2026-10-31' }
+    const electric = { ...phone, id: 'electric', dueDay: 17, amountCents: 200_000 }
+    expect(statusForPeriod(electric, [], [], october)).toBe('unpaid')
+    expect(unpaidExpenseCents([electric], [], [], october)).toBe(200_000)
+  })
+
+  it('is paid for the month after a payment in that month', () => {
+    const october = { start: '2026-10-01', end: '2026-10-31' }
+    const electric = { ...phone, id: 'electric', dueDay: 17 }
+    expect(
+      statusForPeriod(electric, [{ recurringId: 'electric', date: '2026-10-17' }], [], october),
+    ).toBe('paid')
+    expect(unpaidExpenseCents([electric], [{ recurringId: 'electric', date: '2026-10-17' }], [], october)).toBe(0)
+  })
+
+  it('treats a skip anywhere in the month as skipped for the month', () => {
+    const october = { start: '2026-10-01', end: '2026-10-31' }
+    const electric = { ...phone, id: 'electric', dueDay: 17 }
+    expect(
+      statusForPeriod(
+        electric,
+        [],
+        [{ recurringId: 'electric', periodStart: '2026-10-16' }],
+        october,
+      ),
+    ).toBe('skipped')
+    expect(
+      unpaidExpenseCents(
+        [electric],
+        [],
+        [{ recurringId: 'electric', periodStart: '2026-10-16' }],
+        october,
+      ),
+    ).toBe(0)
+  })
 })
 
 describe('unpaidExpenseCents / safeToSpend', () => {

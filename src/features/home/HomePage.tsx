@@ -10,7 +10,7 @@ import {
 } from '../../components/display.tsx'
 import { useAppState } from '../../context/AppState.tsx'
 import { monthSummary, overLimitCount, spendByCategory } from '../../lib/budget.ts'
-import { addDays, formatShortDate, inRange, lastNMonthRanges } from '../../lib/dates.ts'
+import { addDays, billMonthRange, formatShortDate, inRange, lastNMonthRanges } from '../../lib/dates.ts'
 import { formatPeriodTick, lastNPayPeriods } from '../../lib/payPeriod.ts'
 import { centsToMajor, formatMoney, majorToCents } from '../../lib/money.ts'
 import { markResponsibilityPaid } from '../../db/ops.ts'
@@ -93,26 +93,28 @@ export function HomePage() {
     }
   })
 
+  const billMonth = billMonthRange(range.start)
   const activeBills = recurring.filter((r) => r.active)
   const unpaidBills = unpaidExpenseCents(
     activeBills,
     transactions,
     recurringSkips,
-    range,
+    billMonth,
   )
   const billCounts = responsibilityCounts(
     activeBills,
     transactions,
     recurringSkips,
-    range,
+    billMonth,
   )
-  const unpaidItems = sortResponsibilities(
+  const monthBills = sortResponsibilities(
     activeBills.filter((r) => r.kind === 'expense'),
     transactions,
     recurringSkips,
-    range,
-  ).filter(
-    (r) => statusForPeriod(r, transactions, recurringSkips, range) === 'unpaid',
+    billMonth,
+  ).filter((r) => statusForPeriod(r, transactions, recurringSkips, billMonth) !== 'not_due')
+  const unpaidItems = monthBills.filter(
+    (r) => statusForPeriod(r, transactions, recurringSkips, billMonth) === 'unpaid',
   )
 
   const topGoals = [...goals.filter((g) => !g.archived)]
@@ -279,26 +281,32 @@ export function HomePage() {
             {unpaidBills > 0 ? ` · ${formatMoney(unpaidBills, currency)} still due` : ''}
           </p>
         )}
-        {unpaidItems.slice(0, 4).map((item) => (
-          <div key={item.id} className="list-row">
-            <CategoryGlyph category={categoryMap.get(item.categoryId)} fallback="bill" />
-            <div className="grow">
-              <div className="strong ellipsis">{item.name}</div>
-              <div className="tiny muted">
-                Due {formatShortDate(dueDateForPeriod(item.dueDay, range))}
+        {monthBills.map((item) => {
+          const status = statusForPeriod(item, transactions, recurringSkips, billMonth)
+          const due = formatShortDate(dueDateForPeriod(item.dueDay, billMonth))
+          const statusLabel =
+            status === 'paid' ? 'Paid' : status === 'skipped' ? 'Not this month' : `Due ${due}`
+          return (
+            <div key={item.id} className="list-row">
+              <CategoryGlyph category={categoryMap.get(item.categoryId)} fallback="bill" />
+              <div className="grow">
+                <div className="strong ellipsis">{item.name}</div>
+                <div className="tiny muted">{statusLabel}</div>
               </div>
+              <MoneyText cents={item.amountCents} currency={currency} tone="out" />
+              {status === 'unpaid' ? (
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  style={{ width: 'auto', minHeight: 40, padding: '0 12px' }}
+                  onClick={() => void markResponsibilityPaid(item.id, billMonth)}
+                >
+                  Paid
+                </button>
+              ) : null}
             </div>
-            <MoneyText cents={item.amountCents} currency={currency} tone="out" />
-            <button
-              type="button"
-              className="btn btn-primary"
-              style={{ width: 'auto', minHeight: 40, padding: '0 12px' }}
-              onClick={() => void markResponsibilityPaid(item.id, range)}
-            >
-              Paid
-            </button>
-          </div>
-        ))}
+          )
+        })}
         {activeBills.length === 0 ? (
           <Link to="/responsibilities/new" className="btn btn-secondary" style={{ marginTop: 8 }}>
             Add a bill

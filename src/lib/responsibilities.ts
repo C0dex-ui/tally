@@ -73,7 +73,11 @@ export function statusForPeriod(
   skips: PeriodSkip[],
   range: PeriodRange,
 ): ResponsibilityStatus {
-  if (skips.some((s) => s.recurringId === item.id && s.periodStart === range.start)) {
+  if (
+    skips.some(
+      (s) => s.recurringId === item.id && inRange(s.periodStart, range.start, range.end),
+    )
+  ) {
     return 'skipped'
   }
   if (

@@ -1,6 +1,7 @@
 import { db } from './index.ts'
 import { DEFAULT_CATEGORIES, DEFAULT_SETTINGS } from './seed.ts'
 import type {
+  BillSetAside,
   Category,
   DailyOver,
   FundBorrow,
@@ -29,10 +30,11 @@ export interface BackupFile {
   fundBorrows?: FundBorrow[]
   utangs?: Utang[]
   dailyOvers?: DailyOver[]
+  billSetAsides?: BillSetAside[]
 }
 
 export async function exportBackup(): Promise<BackupFile> {
-  const [settings, categories, transactions, recurring, recurringSkips, goals, goalEvents, fundBorrows, utangs, dailyOvers] =
+  const [settings, categories, transactions, recurring, recurringSkips, goals, goalEvents, fundBorrows, utangs, dailyOvers, billSetAsides] =
     await Promise.all([
       db.settings.toArray(),
       db.categories.toArray(),
@@ -44,6 +46,7 @@ export async function exportBackup(): Promise<BackupFile> {
       db.fundBorrows.toArray(),
       db.utangs.toArray(),
       db.dailyOvers.toArray(),
+      db.billSetAsides.toArray(),
     ])
   return {
     version: BACKUP_VERSION,
@@ -58,6 +61,7 @@ export async function exportBackup(): Promise<BackupFile> {
     fundBorrows,
     utangs,
     dailyOvers,
+    billSetAsides,
   }
 }
 
@@ -98,6 +102,7 @@ export function parseBackup(raw: unknown): BackupFile {
     fundBorrows: Array.isArray(data.fundBorrows) ? data.fundBorrows : [],
     utangs: Array.isArray(data.utangs) ? data.utangs : [],
     dailyOvers: Array.isArray(data.dailyOvers) ? data.dailyOvers : [],
+    billSetAsides: Array.isArray(data.billSetAsides) ? data.billSetAsides : [],
   }
 }
 
@@ -119,6 +124,7 @@ export async function importBackup(
         db.fundBorrows,
         db.utangs,
         db.dailyOvers,
+        db.billSetAsides,
       ],
       async () => {
         await Promise.all([
@@ -132,6 +138,7 @@ export async function importBackup(
           db.fundBorrows.clear(),
           db.utangs.clear(),
           db.dailyOvers.clear(),
+          db.billSetAsides.clear(),
         ])
         if (backup.settings.length) await db.settings.bulkPut(backup.settings)
         else await db.settings.put(DEFAULT_SETTINGS)
@@ -147,6 +154,7 @@ export async function importBackup(
         if (backup.fundBorrows?.length) await db.fundBorrows.bulkPut(backup.fundBorrows)
         if (backup.utangs?.length) await db.utangs.bulkPut(backup.utangs)
         if (backup.dailyOvers?.length) await db.dailyOvers.bulkPut(backup.dailyOvers)
+        if (backup.billSetAsides?.length) await db.billSetAsides.bulkPut(backup.billSetAsides)
       },
     )
     return
@@ -165,6 +173,7 @@ export async function importBackup(
       db.fundBorrows,
       db.utangs,
       db.dailyOvers,
+      db.billSetAsides,
     ],
     async () => {
       const existing = {
@@ -177,6 +186,7 @@ export async function importBackup(
         fundBorrows: new Set((await db.fundBorrows.toCollection().primaryKeys()).map(String)),
         utangs: new Set((await db.utangs.toCollection().primaryKeys()).map(String)),
         dailyOvers: new Set((await db.dailyOvers.toCollection().primaryKeys()).map(String)),
+        billSetAsides: new Set((await db.billSetAsides.toCollection().primaryKeys()).map(String)),
       }
       const cats = backup.categories.filter((c) => !existing.categories.has(c.id))
       const txns = backup.transactions.filter((t) => !existing.transactions.has(t.id))
@@ -187,6 +197,7 @@ export async function importBackup(
       const borrows = (backup.fundBorrows ?? []).filter((b) => !existing.fundBorrows.has(b.id))
       const utangs = (backup.utangs ?? []).filter((u) => !existing.utangs.has(u.id))
       const overs = (backup.dailyOvers ?? []).filter((o) => !existing.dailyOvers.has(o.id))
+      const asides = (backup.billSetAsides ?? []).filter((a) => !existing.billSetAsides.has(a.id))
       if (cats.length) await db.categories.bulkAdd(cats)
       if (txns.length) await db.transactions.bulkAdd(txns)
       if (rec.length) await db.recurring.bulkAdd(rec)
@@ -196,6 +207,7 @@ export async function importBackup(
       if (borrows.length) await db.fundBorrows.bulkAdd(borrows)
       if (utangs.length) await db.utangs.bulkAdd(utangs)
       if (overs.length) await db.dailyOvers.bulkAdd(overs)
+      if (asides.length) await db.billSetAsides.bulkAdd(asides)
       if (backup.settings[0]) {
         const current = await db.settings.get(DEFAULT_SETTINGS.id)
         await db.settings.put({
@@ -223,6 +235,7 @@ export async function resetAllData(): Promise<void> {
       db.fundBorrows,
       db.utangs,
       db.dailyOvers,
+      db.billSetAsides,
     ],
     async () => {
       await Promise.all([
@@ -236,6 +249,7 @@ export async function resetAllData(): Promise<void> {
         db.fundBorrows.clear(),
         db.utangs.clear(),
         db.dailyOvers.clear(),
+        db.billSetAsides.clear(),
       ])
       await db.settings.put({ ...DEFAULT_SETTINGS, onboarded: false })
       await db.categories.bulkPut(DEFAULT_CATEGORIES)
