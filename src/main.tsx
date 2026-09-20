@@ -5,7 +5,12 @@ import './styles/tokens.css'
 import './styles/global.css'
 import App from './App.tsx'
 
-registerSW({ immediate: true })
+registerSW({
+  immediate: true,
+  onNeedRefresh() {
+    location.reload()
+  },
+})
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
