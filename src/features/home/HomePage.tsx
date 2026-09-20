@@ -133,7 +133,7 @@ export function HomePage() {
         <p className="page-kicker">
           {periodMode === 'pay' ? 'This paycheck' : 'This month'}
         </p>
-        <h1 className="page-title">Hey {settings.displayName || 'Leonel'}</h1>
+        <h1 className="page-title">Hello {settings.displayName || 'Leonel'}</h1>
       </div>
       <MonthSwitcher
         label={monthLabel}
@@ -155,27 +155,31 @@ export function HomePage() {
       ) : null}
 
       <section className="card balance-card">
-        <p className="page-kicker">
-          {!hasCapital
-            ? 'What’s left'
-            : leftoverNeg
-              ? 'Overcommitted'
-              : 'What’s left'}
-        </p>
-        {hasCapital && whatsLeftCents != null ? (
-          <p className={`hero-amount ${leftoverNeg ? 'neg' : 'pos'}`}>
-            {formatMoney(Math.abs(whatsLeftCents), currency)}
-          </p>
-        ) : (
-          <p className="hero-amount muted">—</p>
-        )}
-        {periodMode === 'pay' && nextPaydayDate && today <= range.end ? (
-          <p className="tiny muted" style={{ marginTop: 6 }}>
-            {daysLeft === 0
-              ? `Payday today · ${formatShortDate(nextPaydayDate)}`
-              : `${daysLeft}d to payday · ${formatShortDate(nextPaydayDate)}`}
-          </p>
-        ) : null}
+        <div className="leftover-hero">
+          <div className="leftover-hero-main">
+            <p className="page-kicker">
+              {!hasCapital
+                ? 'Remaining'
+                : leftoverNeg
+                  ? 'Overcommitted'
+                  : 'Remaining'}
+            </p>
+            {hasCapital && whatsLeftCents != null ? (
+              <p className={`hero-amount ${leftoverNeg ? 'neg' : 'pos'}`}>
+                {formatMoney(Math.abs(whatsLeftCents), currency)}
+              </p>
+            ) : (
+              <p className="hero-amount muted">—</p>
+            )}
+          </div>
+          {periodMode === 'pay' && nextPaydayDate && today <= range.end ? (
+            <div className="payday-badge" aria-label={daysLeft === 0 ? 'Payday today' : `${daysLeft} days to payday`}>
+              <em>Next payday</em>
+              <b>{daysLeft === 0 ? 'Today' : daysLeft}</b>
+              <span>{daysLeft === 0 ? 'payday' : daysLeft === 1 ? 'day' : 'days'}</span>
+            </div>
+          ) : null}
+        </div>
         {periodMode === 'pay' &&
         (monthlyBillsCents > 0 || goalAllotmentCents > 0 || catchUpCents > 0) ? (
           <p className="tiny muted" style={{ marginTop: 6 }}>
@@ -198,7 +202,7 @@ export function HomePage() {
         ) : null}
         {hasCapital && periodMode === 'pay' && today <= range.end ? (
           <div className={`daily-limit${todayOver ? ' over' : ''}`}>
-            <p className="page-kicker">Daily spend limit</p>
+            <p className="page-kicker">Daily limit</p>
             <p className="daily-limit-amount">{formatMoney(dailyMaxCents, currency)}</p>
             <p className="tiny muted" style={{ marginTop: 4 }}>
               {todayOver
@@ -215,12 +219,12 @@ export function HomePage() {
               over={todayOver}
             />
             <p className="tiny muted" style={{ marginTop: 6 }}>
-              {savePercent}% held from leftover
+              {savePercent}% reserved until payday
             </p>
           </div>
         ) : !hasCapital ? (
           <p className="tiny muted" style={{ marginTop: 6 }}>
-            Set cash left to get a daily limit.
+            Enter cash on hand to set a daily limit.
           </p>
         ) : null}
         <div className="stat-grid" style={{ marginTop: 14 }}>
@@ -248,11 +252,11 @@ export function HomePage() {
       {!hasActivity && unpaidItems.length === 0 ? (
         <EmptyState
           icon="wallet"
-          title="Add your first expense"
-          body="Or tap Cash left."
+          title="Add your first transaction"
+          body="Or enter cash on hand."
           action={
             <Link to="/add" className="btn btn-primary">
-              Add expense
+              Add transaction
             </Link>
           }
         />
@@ -267,7 +271,7 @@ export function HomePage() {
         </div>
         {activeBills.length === 0 ? (
           <p className="hint" style={{ marginTop: 8 }}>
-            Add rent, phone, insurance.
+            Add monthly bills such as rent, phone, or insurance.
           </p>
         ) : (
           <p className="tiny muted" style={{ margin: '6px 0 8px' }}>
@@ -353,8 +357,8 @@ export function HomePage() {
       ) : (
         <EmptyState
           icon="target"
-          title="A savings goal"
-          body="Not an expense."
+          title="No savings goals yet"
+          body="Goals are not expenses. They reserve an amount each paycheck."
           action={
             <Link to="/goals/new" className="btn btn-secondary">
               New goal

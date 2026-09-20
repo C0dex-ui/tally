@@ -12,14 +12,14 @@ export function LeftoverLine() {
   } = useAppState()
 
   if (!hasCapital || whatsLeftCents == null) {
-    return <p className="tiny muted">Set cash left this {periodMode === 'pay' ? 'paycheck' : 'month'}</p>
+    return <p className="tiny muted">Enter cash on hand this {periodMode === 'pay' ? 'paycheck' : 'month'}</p>
   }
 
   const left = formatMoney(whatsLeftCents, currency)
   const daily = formatMoney(dailyMaxCents, currency)
   return (
     <p className="tiny muted">
-      What’s left {left}
+      Remaining {left}
       {periodMode === 'pay'
         ? ` · ${daily}/day · ${daysUntilPayday}d`
         : ''}

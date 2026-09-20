@@ -86,8 +86,8 @@ export function ReportsPage() {
       {!has ? (
         <EmptyState
           icon="pie"
-          title="No data"
-          body=""
+          title="No activity yet"
+          body="Reports appear after you add transactions."
         />
       ) : (
         <>
@@ -107,7 +107,7 @@ export function ReportsPage() {
                     ? '—'
                     : formatMoney(whatsLeftCents, currency)}
                 </b>
-                <span>What’s left</span>
+                <span>Remaining</span>
               </div>
             </div>
           </section>

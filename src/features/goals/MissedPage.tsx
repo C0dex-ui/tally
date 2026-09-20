@@ -50,7 +50,7 @@ export function MissedPage() {
     <div className="stack-lg">
       <FundTabs />
       <div>
-        <p className="page-kicker">Still to put</p>
+        <p className="page-kicker">Still to restore</p>
         <h1 className="page-title">Missed</h1>
       </div>
 
@@ -69,15 +69,15 @@ export function MissedPage() {
         <EmptyState
           icon="check"
           title="Caught up"
-          body="Closed months met the monthly amount. No borrows to put back."
+          body="Closed months met the monthly amount. Nothing left to restore."
         />
       ) : (
         <>
           <section className="card">
-            <p className="page-kicker">Still to put</p>
+            <p className="page-kicker">Still to restore</p>
             <p className="hero-amount neg">{formatMoney(due, currency)}</p>
             <p className="tiny muted" style={{ marginTop: 8 }}>
-              Catch-up and put-back minus leftover only in the paycheck you add them.
+              Catch-up and put-back reduce remaining cash only in the paycheck you record them.
             </p>
           </section>
           {openBorrows.length > 0 ? (
@@ -88,7 +88,7 @@ export function MissedPage() {
                   <div className="list-row">
                     <div className="grow">
                       <div className="strong">{row.purpose}</div>
-                      <div className="tiny muted">Checks off on Borrowed when you put this back.</div>
+                      <div className="tiny muted">Marked complete on Borrowed when you restore it.</div>
                     </div>
                     <MoneyText cents={row.remainingCents} currency={currency} tone="out" />
                   </div>

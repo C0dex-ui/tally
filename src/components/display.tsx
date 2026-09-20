@@ -39,14 +39,16 @@ export function CategoryGlyph({
 export function ProgressBar({
   value,
   over = false,
+  color,
 }: {
   value: number
   over?: boolean
+  color?: string
 }) {
   const width = Math.min(100, Math.max(0, value * 100))
   return (
     <div className={`progress${over ? ' over' : ''}`}>
-      <span style={{ width: `${width}%` }} />
+      <span style={{ width: `${width}%`, background: color || undefined }} />
     </div>
   )
 }

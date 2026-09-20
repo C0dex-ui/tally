@@ -11,8 +11,11 @@ import { GoalsPage } from './features/goals/GoalsPage.tsx'
 import { GoalForm } from './features/goals/GoalForm.tsx'
 import { BorrowedPage } from './features/goals/BorrowedPage.tsx'
 import { MissedPage } from './features/goals/MissedPage.tsx'
+import { OverPage } from './features/goals/OverPage.tsx'
 import { MorePage } from './features/more/MorePage.tsx'
 import { ResponsibilitiesPage } from './features/responsibilities/ResponsibilitiesPage.tsx'
+import { PutAwayPage } from './features/responsibilities/PutAwayPage.tsx'
+import { UtangPage } from './features/responsibilities/UtangPage.tsx'
 import { ResponsibilityForm } from './features/responsibilities/ResponsibilityForm.tsx'
 import { ReportsPage } from './features/reports/ReportsPage.tsx'
 import { SettingsPage } from './features/settings/SettingsPage.tsx'
@@ -32,10 +35,13 @@ function Gate() {
         <Route index element={<HomePage />} />
         <Route path="transactions" element={<TransactionsPage />} />
         <Route path="responsibilities" element={<ResponsibilitiesPage />} />
+        <Route path="put-away" element={<PutAwayPage />} />
+        <Route path="utang" element={<UtangPage />} />
         <Route path="budget" element={<BudgetPage />} />
         <Route path="goals" element={<GoalsPage />} />
         <Route path="borrowed" element={<BorrowedPage />} />
         <Route path="missed" element={<MissedPage />} />
+        <Route path="over" element={<OverPage />} />
         <Route path="more" element={<MorePage />} />
         <Route path="more/recurring" element={<Navigate to="/responsibilities" replace />} />
         <Route path="more/reports" element={<ReportsPage />} />

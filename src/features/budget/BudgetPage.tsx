@@ -76,7 +76,7 @@ export function BudgetPage() {
       <section className="card">
         <h2>Spending</h2>
         {expenses.length === 0 ? (
-          <EmptyState icon="pie" title="No categories" body="" />
+          <EmptyState icon="pie" title="No categories" body="Add a category to track spending." />
         ) : (
           expenses.map((c) => {
             const spent = spend.get(c.id) ?? 0

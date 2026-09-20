@@ -62,7 +62,7 @@ export function CategoryForm() {
   async function onSubmit(e: FormEvent) {
     e.preventDefault()
     if (!name.trim()) {
-      setError('Give it a name.')
+      setError('Enter a name.')
       return
     }
     const cents = limit.trim() === '' ? 0 : parseMajorInput(limit, currency)
@@ -116,7 +116,7 @@ export function CategoryForm() {
         />
         <div className="field">
           <span className="label">Icon</span>
-          <div className="chips">
+          <div className="chips pack">
             {ICONS.map((n) => (
               <button
                 key={n}
@@ -132,7 +132,7 @@ export function CategoryForm() {
         </div>
         <div className="field">
           <span className="label">Color</span>
-          <div className="chips">
+          <div className="chips pack">
             {COLORS.map((c) => (
               <button
                 key={c}
@@ -158,7 +158,7 @@ export function CategoryForm() {
       <ConfirmDialog
         open={confirm}
         title="Archive this category?"
-        body="Hidden from pickers. Old transactions keep the name."
+        body="Hidden from category lists. Existing transactions keep this name."
         confirmLabel="Archive"
         danger
         onCancel={() => setConfirm(false)}

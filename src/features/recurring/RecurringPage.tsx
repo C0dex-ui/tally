@@ -24,7 +24,7 @@ export function RecurringPage() {
         <EmptyState
           icon="bill"
           title="No recurring items"
-          body="Rent, subscriptions, paycheck."
+          body="Add repeating bills, subscriptions, or income."
           action={
             <Link to="/more/recurring/new" className="btn btn-primary">
               Add recurring

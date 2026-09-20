@@ -24,7 +24,7 @@ export function BorrowedPage() {
         <EmptyState
           icon="target"
           title="No emergency fund"
-          body="Start a fund first. Borrow from the fund when you need cash."
+          body="Create an emergency fund first. Borrow from it when you need cash."
           action={
             <Link to="/goals/new" className="btn btn-primary">
               Start fund
@@ -35,7 +35,7 @@ export function BorrowedPage() {
         <EmptyState
           icon="wallet"
           title="Nothing borrowed"
-          body="Log a borrow on the emergency fund. Put the cash back on Missed."
+          body="Record a withdrawal from the emergency fund. Restore it on Missed."
         />
       ) : (
         <>
@@ -52,7 +52,7 @@ export function BorrowedPage() {
                 </label>
               ))}
               <p className="tiny muted" style={{ marginTop: 8 }}>
-                Amounts live on Missed. This box checks when you put the cash back.
+                Restore amounts on Missed. This item is marked complete when you put the cash back.
               </p>
             </section>
           ) : null}

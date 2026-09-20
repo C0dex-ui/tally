@@ -66,8 +66,8 @@ export function Onboarding() {
         {step === 0 ? (
           <>
             <p className="page-kicker">Welcome</p>
-            <h1>Budget on this phone.</h1>
-            <p className="hint">No account. Export a backup in Settings.</p>
+            <h1>Keep your budget on this device.</h1>
+            <p className="hint">No account required. Export a backup from Settings.</p>
             <div className="field">
               <label htmlFor="ob-name">Name</label>
               <input
@@ -109,7 +109,7 @@ export function Onboarding() {
               currency={currency}
             />
             <div className="field">
-              <span className="label">I get paid</span>
+              <span className="label">Pay schedule</span>
               <div className="stack">
                 {PAYDAY_PRESETS.map((p) => (
                   <button
@@ -125,7 +125,7 @@ export function Onboarding() {
             </div>
             <label className="list-row" style={{ border: 0 }}>
               <div className="grow">
-                <div className="strong">Remind me each payday</div>
+                <div className="strong">Add a payday reminder</div>
               </div>
               <input
                 type="checkbox"
@@ -169,7 +169,7 @@ export function Onboarding() {
           <>
             <p className="page-kicker">Limits</p>
             <h1>Until next payday</h1>
-            <p className="hint">Per paycheck. Blank = no limit.</p>
+            <p className="hint">Optional limits per paycheck. Leave blank for none.</p>
             {budgetCats.map((c) => (
               <AmountField
                 key={c.id}
@@ -193,8 +193,8 @@ export function Onboarding() {
         {step === 3 ? (
           <>
             <p className="page-kicker">Backup</p>
-            <h1>Export in Settings.</h1>
-            <p className="hint">Clearing site data deletes this budget.</p>
+            <h1>Export a backup from Settings.</h1>
+            <p className="hint">Clearing site data permanently deletes this budget.</p>
             {error ? <p className="error">{error}</p> : null}
             <button type="button" className="btn btn-primary" onClick={() => void finish()}>
               Open Tally

@@ -2,11 +2,14 @@ import { Link } from 'react-router-dom'
 import { Icon, type IconName } from '../../components/Icon.tsx'
 
 const links: { to: string; title: string; body: string; icon: IconName }[] = [
-  { to: '/goals', title: 'Goals', body: 'Emergency fund', icon: 'target' },
-  { to: '/borrowed', title: 'Borrowed', body: 'Checklist of what you borrowed', icon: 'wallet' },
-  { to: '/missed', title: 'Missed', body: 'Catch up short months', icon: 'calendar' },
-  { to: '/more/reports', title: 'Reports', body: 'Trends', icon: 'pie' },
-  { to: '/more/settings', title: 'Settings', body: 'Backup, theme', icon: 'settings' },
+  { to: '/goals', title: 'Goals', body: 'Emergency fund and other targets', icon: 'target' },
+  { to: '/borrowed', title: 'Borrowed', body: 'Amounts drawn from the emergency fund', icon: 'wallet' },
+  { to: '/missed', title: 'Missed', body: 'Short months to restore', icon: 'calendar' },
+  { to: '/over', title: 'Over', body: 'Daily limit overages', icon: 'flag' },
+  { to: '/put-away', title: 'Put away', body: 'Bills and goals this paycheck', icon: 'piggy' },
+  { to: '/utang', title: 'Utang', body: 'Personal amounts owed. Does not affect remaining cash.', icon: 'wallet' },
+  { to: '/more/reports', title: 'Reports', body: 'Spending trends', icon: 'pie' },
+  { to: '/more/settings', title: 'Settings', body: 'Backup and appearance', icon: 'settings' },
 ]
 
 export function MorePage() {

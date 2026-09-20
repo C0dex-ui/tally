@@ -68,8 +68,8 @@ export function TransactionsPage() {
       {groups.length === 0 ? (
         <EmptyState
           icon="list"
-          title={periodMode === 'pay' ? 'Nothing this paycheck' : 'Nothing this month'}
-          body=""
+          title={periodMode === 'pay' ? 'No activity this paycheck' : 'No activity this month'}
+          body="Add a transaction to start this period."
           action={
             <Link to="/add" className="btn btn-primary">
               Add transaction

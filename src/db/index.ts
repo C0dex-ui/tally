@@ -1,6 +1,7 @@
 import Dexie, { type Table } from 'dexie'
 import type {
   Category,
+  DailyOver,
   FundBorrow,
   Goal,
   GoalEvent,
@@ -8,8 +9,9 @@ import type {
   RecurringSkip,
   Settings,
   Transaction,
+  Utang,
 } from './types.ts'
-import { DEFAULT_CATEGORIES, DEFAULT_SETTINGS, LEGACY_EXPENSE_IDS } from './seed.ts'
+import { DEFAULT_CATEGORIES, DEFAULT_SETTINGS, EXTRA_CATEGORY_IDS, LEGACY_EXPENSE_IDS } from './seed.ts'
 import { dueDayFromIso } from '../lib/responsibilities.ts'
 
 export class BudgetDB extends Dexie {
@@ -21,6 +23,8 @@ export class BudgetDB extends Dexie {
   goals!: Table<Goal, string>
   goalEvents!: Table<GoalEvent, string>
   fundBorrows!: Table<FundBorrow, string>
+  utangs!: Table<Utang, string>
+  dailyOvers!: Table<DailyOver, string>
 
   constructor() {
     super('tally-budget')
@@ -137,6 +141,47 @@ export class BudgetDB extends Dexie {
         .modify((row: { monthlyContributionCents?: number; startedOn?: string }) => {
           if (row.monthlyContributionCents == null) row.monthlyContributionCents = 0
           if (!row.startedOn) row.startedOn = ''
+        })
+    })
+    this.version(11).stores({
+      settings: 'id',
+      categories: 'id, kind, archived, sortOrder',
+      transactions: 'id, date, kind, categoryId, recurringId',
+      recurring: 'id, nextDate, active, kind, dueDay',
+      recurringSkips: 'id, recurringId, periodStart, [recurringId+periodStart]',
+      goals: 'id, archived',
+      goalEvents: 'id, goalId, date',
+      fundBorrows: 'id, goalId, date, remainingCents',
+      utangs: 'id, archived, date',
+    })
+    this.version(12).stores({
+      settings: 'id',
+      categories: 'id, kind, archived, sortOrder',
+      transactions: 'id, date, kind, categoryId, recurringId',
+      recurring: 'id, nextDate, active, kind, dueDay',
+      recurringSkips: 'id, recurringId, periodStart, [recurringId+periodStart]',
+      goals: 'id, archived',
+      goalEvents: 'id, goalId, date',
+      fundBorrows: 'id, goalId, date, remainingCents',
+      utangs: 'id, archived, date',
+      dailyOvers: 'id, date',
+    })
+    this.version(13).upgrade(async (trans) => {
+      const extras = new Set<string>(EXTRA_CATEGORY_IDS)
+      await trans
+        .table('categories')
+        .toCollection()
+        .modify((row: { id: string; archived?: boolean }) => {
+          if (extras.has(row.id)) row.archived = true
+        })
+    })
+    this.version(14).upgrade(async (trans) => {
+      const extras = new Set<string>(EXTRA_CATEGORY_IDS)
+      await trans
+        .table('categories')
+        .toCollection()
+        .modify((row: { id: string; archived?: boolean }) => {
+          if (extras.has(row.id)) row.archived = false
         })
     })
   }

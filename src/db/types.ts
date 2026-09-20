@@ -18,7 +18,7 @@ export interface Settings {
   periodMode: PeriodMode
   payday1: number
   payday2: number
-  savePercent: 5 | 8 | 10
+  savePercent: 0 | 5 | 8 | 10
   theme: ThemePref
   onboarded: boolean
   capitalCents?: number
@@ -99,6 +99,22 @@ export interface FundBorrow {
   purpose: string
   date: string
   notes: string
+}
+
+export interface Utang {
+  id: string
+  name: string
+  amountCents: number
+  date: string
+  archived: boolean
+}
+
+export interface DailyOver {
+  id: string
+  date: string
+  spentCents: number
+  dailyMaxCents: number
+  overCents: number
 }
 
 export const SETTINGS_ID = 1

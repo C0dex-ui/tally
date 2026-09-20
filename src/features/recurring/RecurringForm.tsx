@@ -37,7 +37,7 @@ export function RecurringForm() {
     e.preventDefault()
     const cents = parseMajorInput(amount, currency)
     if (!name.trim()) {
-      setError('Give it a name.')
+      setError('Enter a name.')
       return
     }
     if (cents === null || cents <= 0) {
@@ -164,7 +164,7 @@ export function RecurringForm() {
       <ConfirmDialog
         open={confirm}
         title="Delete this schedule?"
-        body="Past payments stay."
+        body="Past payments remain in Activity."
         confirmLabel="Delete"
         danger
         onCancel={() => setConfirm(false)}

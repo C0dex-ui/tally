@@ -12,6 +12,7 @@ import {
 import { todayISO } from '../../lib/dates.ts'
 import { centsToMajorString, parseMajorInput } from '../../lib/money.ts'
 import { amountChips } from '../../lib/cash.ts'
+import { BILL_CATEGORY_IDS } from '../../db/seed.ts'
 import type { MoneyKind } from '../../db/types.ts'
 
 const LAST_EXPENSE_KEY = 'tally.lastExpenseCategory'
@@ -49,8 +50,19 @@ export function TransactionForm() {
   }, [existing, hydrated, currency])
 
   const choices = useMemo(
-    () => categories.filter((c) => !c.archived && c.kind === kind),
-    [categories, kind],
+    () =>
+      categories.filter((c) => {
+        if (c.archived || c.kind !== kind) return false
+        if (
+          kind === 'expense' &&
+          (BILL_CATEGORY_IDS as readonly string[]).includes(c.id) &&
+          c.id !== existing?.categoryId
+        ) {
+          return false
+        }
+        return true
+      }),
+    [categories, kind, existing?.categoryId],
   )
 
   useEffect(() => {
@@ -121,7 +133,7 @@ export function TransactionForm() {
 
   return (
     <>
-      <PageHeader title={existing ? 'Edit transaction' : 'Quick add'} backTo="/" />
+      <PageHeader title={existing ? 'Edit transaction' : 'Add transaction'} backTo="/" />
       <form className="stack-lg" onSubmit={(e) => void onSubmit(e)}>
         <KindToggle value={kind} onChange={onKind} />
         <AmountField value={amount} onChange={setAmount} currency={currency} />
@@ -134,7 +146,7 @@ export function TransactionForm() {
         </div>
         <div className="field">
           <span className="label">Category</span>
-          <div className="chips">
+          <div className="chips pack">
             {choices.map((c) => (
               <button
                 key={c.id}

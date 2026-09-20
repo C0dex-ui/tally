@@ -95,7 +95,7 @@ export function SettingsPage() {
               Calendar month
             </button>
           </div>
-          <p className="hint">One payday at a time.</p>
+          <p className="hint">Each paycheck is tracked separately.</p>
         </div>
         {settings.periodMode === 'month' ? (
           <div className="field">
@@ -131,7 +131,7 @@ export function SettingsPage() {
         )}
         <div className="field">
           <span className="label">Save until payday</span>
-          <div className="seg" style={{ gridTemplateColumns: '1fr 1fr 1fr' }}>
+          <div className="seg" style={{ gridTemplateColumns: '1fr 1fr 1fr 1fr' }}>
             {SAVE_PERCENTS.map((p) => (
               <button
                 key={p}
@@ -143,7 +143,7 @@ export function SettingsPage() {
               </button>
             ))}
           </div>
-          <p className="hint">Held back. Daily max is the rest, split by days left.</p>
+          <p className="hint">This share is reserved. The remainder is your daily limit, split by days left.</p>
         </div>
         <div className="field">
           <span className="label">Theme</span>
@@ -186,7 +186,7 @@ export function SettingsPage() {
 
       <section className="card stack">
         <h2>Backup</h2>
-        <p className="hint">Only on this device. Export a copy.</p>
+        <p className="hint">Data stays on this device. Export a backup to keep a copy.</p>
         <button type="button" className="btn btn-primary" onClick={() => void onExport()}>
           <Icon name="download" size={18} /> Export JSON
         </button>

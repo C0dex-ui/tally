@@ -1,4 +1,6 @@
+import { useLayoutEffect, useRef, type ChangeEvent } from 'react'
 import type { MoneyKind } from '../db/types.ts'
+import { formatMajorGrouped } from '../lib/money.ts'
 import { Icon } from './Icon.tsx'
 
 export function KindToggle({
@@ -41,16 +43,42 @@ export function AmountField({
   onChange: (next: string) => void
   currency: string
 }) {
+  const inputRef = useRef<HTMLInputElement>(null)
+  const caretRef = useRef<number | null>(null)
+
+  useLayoutEffect(() => {
+    const el = inputRef.current
+    if (el == null || caretRef.current == null) return
+    el.setSelectionRange(caretRef.current, caretRef.current)
+    caretRef.current = null
+  }, [value])
+
+  function handleChange(e: ChangeEvent<HTMLInputElement>) {
+    const el = e.target
+    const start = el.selectionStart ?? el.value.length
+    const digitsLeft = el.value.slice(0, start).replace(/,/g, '').length
+    const next = formatMajorGrouped(el.value, currency)
+    let pos = 0
+    let seen = 0
+    while (pos < next.length && seen < digitsLeft) {
+      if (next[pos] !== ',') seen += 1
+      pos += 1
+    }
+    caretRef.current = pos
+    onChange(next)
+  }
+
   return (
     <div className="field">
       <label htmlFor={id}>{label}</label>
       <input
         id={id}
+        ref={inputRef}
         inputMode="decimal"
         autoComplete="off"
         placeholder="0.00"
         value={value}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={handleChange}
         aria-describedby={`${id}-currency`}
       />
       <span id={`${id}-currency`} className="sr-only">

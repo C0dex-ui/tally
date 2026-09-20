@@ -1,5 +1,6 @@
 import type { ComponentType, SVGProps } from 'react'
 import {
+  Airplane,
   ArrowsClockwise,
   Bank,
   CalendarBlank,
@@ -74,6 +75,7 @@ const icons = {
   piggy: PiggyBank,
   device: DeviceMobile,
   gas: GasPump,
+  plane: Airplane,
 } as const
 
 export type IconName = keyof typeof icons

@@ -9,6 +9,7 @@ import { todayISO } from '../../lib/dates.ts'
 import { centsToMajorString, parseMajorInput } from '../../lib/money.ts'
 import { clampDueDay } from '../../lib/responsibilities.ts'
 import type { Frequency, MoneyKind } from '../../db/types.ts'
+import { EXTRA_CATEGORY_IDS } from '../../db/seed.ts'
 import { FREQUENCIES } from '../../db/types.ts'
 
 export function ResponsibilityForm() {
@@ -29,14 +30,22 @@ export function ResponsibilityForm() {
   const [error, setError] = useState('')
   const [confirm, setConfirm] = useState(false)
 
-  const choices = categories.filter((c) => !c.archived && c.kind === kind)
+  const choices = categories.filter((c) => {
+    if (c.archived || c.kind !== kind) return false
+    const hidden =
+      c.id === 'food' ||
+      c.id === 'gasoline' ||
+      (EXTRA_CATEGORY_IDS as readonly string[]).includes(c.id)
+    if (hidden && c.id !== existing?.categoryId) return false
+    return true
+  })
   const day = clampDueDay(Number(dueDay))
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault()
     const cents = parseMajorInput(amount, currency)
     if (!name.trim()) {
-      setError('Give it a name.')
+      setError('Enter a name.')
       return
     }
     if (cents === null || cents <= 0) {

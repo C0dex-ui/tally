@@ -16,7 +16,8 @@ function moreActive(pathname: string): boolean {
     pathname === '/goals' ||
     pathname.startsWith('/goals/') ||
     pathname === '/borrowed' ||
-    pathname === '/missed'
+    pathname === '/missed' ||
+    pathname === '/over'
   )
 }
 
@@ -35,6 +36,14 @@ export function Shell() {
             end={item.to === '/'}
             className={({ isActive }) => {
               if (item.to === '/more') return moreActive(location.pathname) ? 'active' : ''
+              if (item.to === '/responsibilities') {
+                return location.pathname === '/responsibilities' ||
+                  location.pathname.startsWith('/responsibilities/') ||
+                  location.pathname === '/put-away' ||
+                  location.pathname === '/utang'
+                  ? 'active'
+                  : ''
+              }
               return isActive ? 'active' : ''
             }}
           >

@@ -8,9 +8,10 @@ import {
 } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, ensureSeeded } from '../db/index.ts'
-import { processAutoLog, type AutoLogResult } from '../db/ops.ts'
+import { processAutoLog, syncDailyOverForDate, type AutoLogResult } from '../db/ops.ts'
 import type {
   Category,
+  DailyOver,
   FundBorrow,
   Goal,
   GoalEvent,
@@ -18,6 +19,7 @@ import type {
   RecurringSkip,
   Settings,
   Transaction,
+  Utang,
 } from '../db/types.ts'
 import { dueDayFromIso, monthlyExpenseTotal, paycheckBillShare } from '../lib/responsibilities.ts'
 import { DEFAULT_SETTINGS } from '../db/seed.ts'
@@ -46,6 +48,8 @@ interface AppStateValue {
   goals: Goal[]
   goalEvents: GoalEvent[]
   fundBorrows: FundBorrow[]
+  utangs: Utang[]
+  dailyOvers: DailyOver[]
   categoryMap: Map<string, Category>
   currency: string
   monthStartDay: number
@@ -74,7 +78,7 @@ interface AppStateValue {
   dailyMaxCents: number
   todayLivingCents: number
   todayOver: boolean
-  savePercent: 5 | 8 | 10
+  savePercent: 0 | 5 | 8 | 10
 }
 
 const AppStateContext = createContext<AppStateValue | null>(null)
@@ -146,6 +150,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     [goalEventsRaw],
   )
   const fundBorrows = useLiveQuery(() => db.fundBorrows.toArray(), []) ?? []
+  const utangs = useLiveQuery(() => db.utangs.toArray(), []) ?? []
+  const dailyOvers = useLiveQuery(() => db.dailyOvers.toArray(), []) ?? []
 
   useEffect(() => {
     const root = document.documentElement
@@ -255,6 +261,11 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     daysUntilPayday,
   ])
 
+  useEffect(() => {
+    if (!seeded) return
+    void syncDailyOverForDate(today)
+  }, [seeded, today, leftover.hasCapital, leftover.dailyMaxCents, leftover.todayLivingCents])
+
   const value: AppStateValue = {
     ready: seeded,
     settings,
@@ -265,6 +276,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     goals,
     goalEvents,
     fundBorrows,
+    utangs,
+    dailyOvers,
     categoryMap,
     currency: settings.currency,
     monthStartDay,

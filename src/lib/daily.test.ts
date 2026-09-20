@@ -12,6 +12,7 @@ describe('saveFloorCents', () => {
   it('keeps 10% of leftover, not of a paycheck', () => {
     expect(saveFloorCents(566_700, 10)).toBe(56_670)
     expect(saveFloorCents(566_700, 5)).toBe(28_335)
+    expect(saveFloorCents(566_700, 0)).toBe(0)
   })
 })
 
@@ -26,6 +27,18 @@ describe('dailyBudget', () => {
     expect(result.floorCents).toBe(145_000)
     expect(result.spendableCents).toBe(1_305_000)
     expect(result.dailyMaxCents).toBe(326_250)
+  })
+
+  it('uses the full leftover when saving 0%', () => {
+    const leftover = 1_450_000
+    const result = dailyBudget({
+      leftoverBeforeTodayCents: leftover,
+      savePercent: 0,
+      daysUntilPayday: 4,
+    })
+    expect(result.floorCents).toBe(0)
+    expect(result.spendableCents).toBe(leftover)
+    expect(result.dailyMaxCents).toBe(362_500)
   })
 
   it('uses a higher daily cap when saving only 5%', () => {

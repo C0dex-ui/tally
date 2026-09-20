@@ -240,6 +240,10 @@ p {
   font-weight: 600;
   letter-spacing: 0.01em;
   min-height: 44px;
+  min-width: 0;
+  padding: 0 2px;
+  overflow: hidden;
+  white-space: nowrap;
 }
 
 .app-nav a.active {
@@ -384,14 +388,20 @@ html[data-theme='dark'] .btn-primary {
 .seg button,
 .seg a {
   min-height: 40px;
+  min-width: 0;
   border: 0;
   border-radius: 9px;
   background: transparent;
   color: var(--muted);
   font-weight: 650;
+  font-size: 0.82rem;
   display: grid;
   place-items: center;
   text-decoration: none;
+  padding: 0 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .seg button.on,
@@ -403,6 +413,10 @@ html[data-theme='dark'] .btn-primary {
 
 .seg-3 {
   grid-template-columns: 1fr 1fr 1fr;
+}
+
+.seg-4 {
+  grid-template-columns: 1fr 1fr 1fr 1fr;
 }
 
 .check-row {
@@ -443,6 +457,12 @@ html[data-theme='dark'] .btn-primary {
   gap: 8px;
 }
 
+.chips.pack {
+  max-height: 220px;
+  overflow: auto;
+  padding-bottom: 2px;
+}
+
 .chip {
   display: inline-flex;
   align-items: center;
@@ -460,6 +480,14 @@ html[data-theme='dark'] .btn-primary {
   border-color: var(--sage);
   background: var(--sage-soft);
   color: var(--sage);
+}
+
+.chip.swatch.on {
+  background: inherit;
+  color: inherit;
+  outline: 3px solid var(--ink);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 1px var(--bg);
 }
 
 .chip .cat-glyph {
@@ -824,6 +852,58 @@ html[data-theme='dark'] .btn-primary {
 
 .balance-card .money-out {
   color: #f0b4a4;
+}
+
+.leftover-hero {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.leftover-hero-main {
+  min-width: 0;
+  flex: 1;
+}
+
+.payday-badge {
+  flex: none;
+  min-width: 76px;
+  padding: 8px 8px 8px;
+  border-radius: 16px;
+  background: #f3efe4;
+  color: #16352b;
+  text-align: center;
+  line-height: 1;
+}
+
+.payday-badge em {
+  display: block;
+  margin-bottom: 4px;
+  font-style: normal;
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #5a7368;
+}
+
+.payday-badge b {
+  display: block;
+  font-size: 1.85rem;
+  font-weight: 750;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+}
+
+.payday-badge span {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #3d5a4e;
 }
 
 .daily-limit {

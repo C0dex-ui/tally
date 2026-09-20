@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { FundTabs } from './FundTabs.tsx'
-import { EmptyState, MoneyText, ProgressBar } from '../../components/display.tsx'
+import { CategoryGlyph, EmptyState, MoneyText, ProgressBar } from '../../components/display.tsx'
 import { useAppState } from '../../context/AppState.tsx'
 import { formatMoney } from '../../lib/money.ts'
 import { formatMonthYear, formatShortDate } from '../../lib/dates.ts'
@@ -44,7 +44,7 @@ export function GoalsPage() {
         <EmptyState
           icon="target"
           title="No savings goals yet"
-          body="Emergency, vacation, laptop."
+          body="Add targets such as an emergency fund, vacation, or a purchase."
           action={
             <Link to="/goals/new" className="btn btn-primary">
               New goal
@@ -63,11 +63,28 @@ export function GoalsPage() {
           })
           return (
             <Link key={g.id} to={`/goals/${g.id}`} className="card tap">
-              <div className="row-between">
-                <h2>{g.name}</h2>
-                <span className="goal-pct">{Math.round(Math.min(pct, 9.99) * 100)}%</span>
+              <div className="row-between" style={{ alignItems: 'center', gap: 10 }}>
+                <CategoryGlyph
+                  category={{
+                    id: g.id,
+                    name: g.name,
+                    kind: 'expense',
+                    icon: 'target',
+                    color: g.color,
+                    monthlyLimitCents: 0,
+                    sortOrder: 0,
+                    archived: false,
+                  }}
+                  fallback="target"
+                />
+                <h2 className="grow" style={{ margin: 0 }}>
+                  {g.name}
+                </h2>
+                <span className="goal-pct" style={{ color: g.color }}>
+                  {Math.round(Math.min(pct, 9.99) * 100)}%
+                </span>
               </div>
-              <ProgressBar value={pct} />
+              <ProgressBar value={pct} color={g.color} />
               <p className="tiny muted" style={{ marginTop: 8 }}>
                 <MoneyText cents={g.savedCents} currency={currency} /> of{' '}
                 {formatMoney(g.targetCents, currency)}
@@ -90,7 +107,7 @@ export function GoalsPage() {
                   Last use: {used.purpose} · {formatShortDate(used.date)}
                 </p>
               ) : isEmergencyGoal(g) ? (
-                <p className="tiny muted">No uses yet.</p>
+                <p className="tiny muted">No withdrawals yet.</p>
               ) : null}
             </Link>
           )

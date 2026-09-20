@@ -85,6 +85,32 @@ export function formatPeriodTick(iso: string): string {
   })
 }
 
+export function payPeriodsInCalendarMonth(
+  monthKey: string,
+  payday1: number,
+  payday2: number,
+): { start: string; end: string }[] {
+  const m = /^\d{4}-\d{2}$/.test(monthKey) ? monthKey : monthKey.slice(0, 7)
+  const start = `${m}-01`
+  const [y, mo] = m.split('-').map(Number)
+  const last = new Date(y, mo, 0).getDate()
+  const end = `${m}-${String(last).padStart(2, '0')}`
+  const seen = new Set<string>()
+  const ranges: { start: string; end: string }[] = []
+  let cursor = start
+  while (cursor <= end) {
+    const range = payPeriodRangeForDate(cursor, payday1, payday2)
+    if (!seen.has(range.start) && range.start.slice(0, 7) === m) {
+      seen.add(range.start)
+      ranges.push(range)
+    }
+    const next = addDays(range.end, 1)
+    if (next <= cursor) break
+    cursor = next
+  }
+  return ranges
+}
+
 export function lastNPayPeriods(
   anchorISO: string,
   payday1: number,

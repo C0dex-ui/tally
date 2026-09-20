@@ -3,6 +3,7 @@ import {
   centsToMajor,
   centsToMajorString,
   currencyFractionDigits,
+  formatMajorGrouped,
   formatMoney,
   majorToCents,
   parseMajorInput,
@@ -45,8 +46,22 @@ describe('formatMoney', () => {
     expect(formatMoney(-500, 'USD')).toMatch(/^−/)
   })
 
+  it('always groups with commas', () => {
+    expect(formatMoney(3_600_000, 'USD')).toMatch(/36,000/)
+    expect(formatMoney(3_600_000, 'PHP')).toMatch(/36,000/)
+  })
+
   it('round-trips cents through major string', () => {
     expect(centsToMajor(199, 'USD')).toBe(1.99)
     expect(centsToMajorString(199, 'USD')).toBe('1.99')
+  })
+
+  it('puts commas in typed and stored amounts', () => {
+    expect(centsToMajorString(3_600_000, 'USD')).toBe('36,000.00')
+    expect(centsToMajorString(3_600_000, 'PHP')).toBe('36,000.00')
+    expect(centsToMajorString(36_000, 'JPY')).toBe('36,000')
+    expect(formatMajorGrouped('36000', 'USD')).toBe('36,000')
+    expect(formatMajorGrouped('36000.', 'USD')).toBe('36,000.')
+    expect(parseMajorInput('36,000.00', 'USD')).toBe(3_600_000)
   })
 })

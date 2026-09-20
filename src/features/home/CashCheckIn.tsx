@@ -56,7 +56,7 @@ export function CashCheckIn() {
   async function save() {
     const cents = parseMajorInput(value, currency)
     if (cents === null || cents < 0) {
-      setError(hasCapital ? 'Enter what’s left.' : 'Enter the cash you have.')
+      setError(hasCapital ? 'Enter the remaining amount.' : 'Enter cash on hand.')
       return
     }
     setSaving(true)
@@ -88,27 +88,27 @@ export function CashCheckIn() {
   return (
     <>
       <button type="button" className="btn btn-secondary" style={{ marginTop: 4 }} onClick={openSheet}>
-        Cash left
+        Cash on hand
       </button>
       {open ? (
         <div className="overlay" role="dialog" aria-modal="true" aria-labelledby="cash-title">
           <div className="sheet">
-            <h2 id="cash-title">Cash left</h2>
+            <h2 id="cash-title">Cash on hand</h2>
             <p className="tiny muted" style={{ margin: '0 0 12px' }}>
               {hasCapital
-                ? `Now ${formatMoney(whatsLeftCents ?? 0, currency)} after bills and goals`
-                : 'Cash you have this paycheck. Bills and goals come out next.'}
+                ? `Currently ${formatMoney(whatsLeftCents ?? 0, currency)} after bills and goals`
+                : 'Enter cash on hand this paycheck. Bills and goals are reserved next.'}
             </p>
             <AmountField
               id="cash-left"
-              label={hasCapital ? 'What’s left' : 'I actually have'}
+              label={hasCapital ? 'Remaining' : 'Amount on hand'}
               value={value}
               onChange={setValue}
               currency={currency}
             />
             {preview ? (
               <p className="tiny muted" style={{ marginTop: 8 }}>
-                Leftover {formatMoney(preview.leftoverCents, currency)}
+                Remaining {formatMoney(preview.leftoverCents, currency)}
                 {periodMode === 'pay' && billAllotmentCents > 0
                   ? ` · bills ${formatMoney(billAllotmentCents, currency)}`
                   : ''}
@@ -118,7 +118,6 @@ export function CashCheckIn() {
                 {periodMode === 'pay' && catchUpCents > 0
                   ? ` · catch-up ${formatMoney(catchUpCents, currency)}`
                   : ''}
-                {` · capital ${formatMoney(preview.capitalCents, currency)}`}
               </p>
             ) : null}
             {error ? <p className="error">{error}</p> : null}

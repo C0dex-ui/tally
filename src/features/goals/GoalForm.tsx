@@ -82,7 +82,7 @@ export function GoalForm() {
   async function onSubmit(e: FormEvent) {
     e.preventDefault()
     if (!name.trim()) {
-      setError('Give it a name.')
+      setError('Enter a name.')
       return
     }
     const cents = parseMajorInput(target, currency)
@@ -236,7 +236,7 @@ export function GoalForm() {
               style={{ marginTop: 8 }}
               onClick={() => void moveMoney('out')}
             >
-              Use (don’t pay back)
+              Use without repayment
             </button>
           ) : null}
         </section>
@@ -244,7 +244,7 @@ export function GoalForm() {
 
       {existing ? (
         <section className="card" style={{ marginBottom: 16 }}>
-          <h2>Meant for</h2>
+          <h2>Intended uses</h2>
           <div className="chips" style={{ marginTop: 8 }}>
             {uses.map((u) => (
               <button key={u} type="button" className="chip on" onClick={() => void removeUse(u)}>
@@ -338,7 +338,7 @@ export function GoalForm() {
           </p>
         ) : (
           <p className="tiny muted">
-            Split across two paychecks. Reserved from leftover like bills.
+            Split across two paychecks. Reserved from remaining cash, like bills.
           </p>
         )}
         <div className="field">
@@ -366,10 +366,11 @@ export function GoalForm() {
               <button
                 key={c}
                 type="button"
-                className={`chip ${color === c ? 'on' : ''}`}
+                className={`chip swatch ${color === c ? 'on' : ''}`}
                 onClick={() => setColor(c)}
                 style={{ background: c, width: 36, minHeight: 36, padding: 0 }}
                 aria-label={c}
+                aria-pressed={color === c}
               />
             ))}
           </div>

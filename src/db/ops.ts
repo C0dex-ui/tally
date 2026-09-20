@@ -1,9 +1,9 @@
 import { db } from './index.ts'
 import { newId, nowISO } from '../lib/ids.ts'
-import { addMonthsClamped, inRange, todayISO } from '../lib/dates.ts'
-import { paydayLabel, payPeriodRangeForDate } from '../lib/payPeriod.ts'
+import { addDays, addMonthsClamped, inRange, monthRangeForDate, todayISO } from '../lib/dates.ts'
+import { daysUntil, paydayLabel, payPeriodRangeForDate } from '../lib/payPeriod.ts'
 import { advanceNextDate, catchUpDates } from '../lib/recurring.ts'
-import { dueDateForPeriod, dueDayFromIso, isDueInPeriod } from '../lib/responsibilities.ts'
+import { dueDateForPeriod, dueDayFromIso, isDueInPeriod, monthlyExpenseTotal, paycheckBillShare } from '../lib/responsibilities.ts'
 import type {
   Category,
   Goal,
@@ -13,11 +13,16 @@ import type {
   Transaction,
 } from './types.ts'
 import { SETTINGS_ID } from './types.ts'
+import { clampSavePercent, dailyBudget, livingSpendOnDate, livingSpendOnOrAfter } from '../lib/daily.ts'
+import { dailyOverRowId, overCents } from '../lib/dailyOver.ts'
 import {
   DEFAULT_EMERGENCY_USES,
+  goalAllotmentCents,
+  goalCatchUpThisPeriod,
   isEmergencyGoal,
   requireWithdrawPurpose,
 } from '../lib/goals.ts'
+import { hasPeriodCapital, whatsLeftFromCapital } from '../lib/leftover.ts'
 
 function isEmergencyName(name: string): boolean {
   return isEmergencyGoal({ name })
@@ -50,6 +55,7 @@ export async function addTransaction(
     createdAt: now,
     updatedAt: now,
   })
+  scheduleDailyOverSync(input.date)
   return id
 }
 
@@ -62,10 +68,14 @@ export async function updateTransaction(
   const next = { ...current, ...patch, id, updatedAt: nowISO() }
   if (next.amountCents <= 0) throw new Error('Amount must be greater than zero.')
   await db.transactions.put(next)
+  scheduleDailyOverSync(current.date)
+  if (next.date !== current.date) scheduleDailyOverSync(next.date)
 }
 
 export async function deleteTransaction(id: string): Promise<void> {
+  const current = await db.transactions.get(id)
   await db.transactions.delete(id)
+  if (current) scheduleDailyOverSync(current.date)
 }
 
 export async function addCategory(
@@ -529,4 +539,99 @@ export async function completeOnboarding(input: {
       }
     },
   )
+}
+
+export async function addUtang(name: string, amountCents: number, date: string): Promise<string> {
+  const who = name.trim()
+  if (!who) throw new Error('Who do you owe?')
+  if (amountCents <= 0) throw new Error('Amount must be greater than zero.')
+  const id = newId()
+  await db.utangs.add({
+    id,
+    name: who,
+    amountCents,
+    date,
+    archived: false,
+  })
+  return id
+}
+
+export async function archiveUtang(id: string): Promise<void> {
+  const row = await db.utangs.get(id)
+  if (!row) throw new Error('Utang not found.')
+  await db.utangs.update(id, { archived: true })
+}
+
+async function currentDailyMaxCents(): Promise<{ hasCapital: boolean; dailyMaxCents: number }> {
+  const settings = await getSettings()
+  const periodMode = settings.periodMode ?? 'pay'
+  const payday1 = settings.payday1 ?? 1
+  const payday2 = settings.payday2 ?? 16
+  const today = todayISO()
+  const range =
+    periodMode === 'pay'
+      ? payPeriodRangeForDate(today, payday1, payday2)
+      : monthRangeForDate(today, settings.monthStartDay)
+  if (!hasPeriodCapital(settings, range.start)) {
+    return { hasCapital: false, dailyMaxCents: 0 }
+  }
+  const recurring = (await db.recurring.toArray()).filter((r) => r.active)
+  const monthlyBillsCents = monthlyExpenseTotal(recurring)
+  const billAllotmentCents = periodMode === 'pay' ? paycheckBillShare(monthlyBillsCents) : 0
+  const goals = await db.goals.toArray()
+  const goalEvents = await db.goalEvents.toArray()
+  const goalReserveCents = periodMode === 'pay' ? goalAllotmentCents(goals) : 0
+  const catchUpCents = periodMode === 'pay' ? goalCatchUpThisPeriod(goals, goalEvents, range) : 0
+  const transactions = await db.transactions.toArray()
+  const livingAfterCountCents = livingSpendOnOrAfter(
+    transactions,
+    settings.capitalDate || range.start,
+    range,
+  )
+  const whatsLeftCents = whatsLeftFromCapital({
+    capitalCents: settings.capitalCents ?? 0,
+    billAllotmentCents,
+    goalAllotmentCents: goalReserveCents,
+    catchUpCents,
+    livingAfterCountCents,
+  })
+  const todayLivingCents = livingSpendOnDate(transactions, today)
+  const leftoverBeforeToday =
+    whatsLeftCents +
+    (settings.capitalDate && today >= settings.capitalDate ? todayLivingCents : 0)
+  const daily = dailyBudget({
+    leftoverBeforeTodayCents: leftoverBeforeToday,
+    savePercent: clampSavePercent(settings.savePercent ?? 10),
+    daysUntilPayday: daysUntil(today, addDays(range.end, 1)),
+  })
+  return { hasCapital: true, dailyMaxCents: daily.dailyMaxCents }
+}
+
+function scheduleDailyOverSync(date: string) {
+  window.setTimeout(() => {
+    void syncDailyOverForDate(date)
+  }, 0)
+}
+
+export async function syncDailyOverForDate(date: string): Promise<void> {
+  const { hasCapital, dailyMaxCents } = await currentDailyMaxCents()
+  const existing = await db.dailyOvers.where('date').equals(date).first()
+  if (!hasCapital) {
+    if (existing) await db.dailyOvers.delete(existing.id)
+    return
+  }
+  const transactions = await db.transactions.toArray()
+  const spentCents = livingSpendOnDate(transactions, date)
+  const over = overCents(spentCents, dailyMaxCents)
+  if (over <= 0) {
+    if (existing) await db.dailyOvers.delete(existing.id)
+    return
+  }
+  await db.dailyOvers.put({
+    id: existing?.id ?? dailyOverRowId(date),
+    date,
+    spentCents,
+    dailyMaxCents,
+    overCents: over,
+  })
 }

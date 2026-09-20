@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { BillTabs } from './BillTabs.tsx'
 import { MonthSwitcher } from '../../components/fields.tsx'
 import { CategoryGlyph, EmptyState, MoneyText } from '../../components/display.tsx'
 import { Icon } from '../../components/Icon.tsx'
@@ -56,6 +57,7 @@ export function ResponsibilitiesPage() {
 
   return (
     <div className="stack-lg">
+      <BillTabs />
       <div className="row-between">
         <div>
           <p className="page-kicker">{periodMode === 'pay' ? 'This paycheck' : 'This month'}</p>
@@ -76,7 +78,7 @@ export function ResponsibilitiesPage() {
         <EmptyState
           icon="bill"
           title="No bills yet"
-          body="Rent, phone, insurance."
+          body="Add monthly bills such as rent, phone, or insurance."
           action={
             <Link to="/responsibilities/new" className="btn btn-primary">
               Add a bill

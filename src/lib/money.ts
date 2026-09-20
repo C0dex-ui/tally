@@ -34,9 +34,33 @@ export function centsToMajor(cents: number, currency = 'USD'): number {
   return cents / 10 ** currencyFractionDigits(currency)
 }
 
+function groupedNumber(value: number, digits: number): string {
+  return new Intl.NumberFormat('en-US', {
+    useGrouping: true,
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits,
+  }).format(value)
+}
+
+/** Typeable major amount with en-US commas. Preserves a trailing decimal while typing. */
+export function formatMajorGrouped(raw: string, currency = 'USD'): string {
+  const cleaned = raw.trim().replace(/,/g, '')
+  if (cleaned === '' || cleaned === '.') return cleaned
+  if (cleaned.startsWith('-')) return formatMajorGrouped(cleaned.slice(1), currency)
+  const digits = currencyFractionDigits(currency)
+  const hasDot = cleaned.includes('.')
+  const [wholeRaw = '', fracRaw = ''] = cleaned.split('.')
+  if (!/^\d*$/.test(wholeRaw) || !/^\d*$/.test(fracRaw)) return raw
+  const whole = wholeRaw === '' ? '0' : String(Number(wholeRaw))
+  if (!Number.isFinite(Number(whole))) return raw
+  const grouped = new Intl.NumberFormat('en-US', { useGrouping: true }).format(Number(whole))
+  if (!hasDot) return grouped
+  return `${grouped}.${fracRaw.slice(0, digits)}`
+}
+
 export function centsToMajorString(cents: number, currency = 'USD'): string {
   const digits = currencyFractionDigits(currency)
-  return centsToMajor(cents, currency).toFixed(digits)
+  return groupedNumber(centsToMajor(cents, currency), digits)
 }
 
 /** Parse a user-typed major-unit amount. Empty/invalid returns null. */
@@ -57,9 +81,10 @@ export function formatMoney(
 ): string {
   const digits = currencyFractionDigits(currency)
   const value = cents / 10 ** digits
-  const formatted = new Intl.NumberFormat(undefined, {
+  const formatted = new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency,
+    useGrouping: true,
   }).format(Math.abs(value))
   if (cents < 0) return `−${formatted}`
   if (opts?.signed && cents > 0) return `+${formatted}`

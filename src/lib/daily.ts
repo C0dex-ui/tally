@@ -23,11 +23,11 @@ export function isLivingPurchase(t: SpendRow): boolean {
   return isDailySpend(t)
 }
 
-export const SAVE_PERCENTS = [5, 8, 10] as const
+export const SAVE_PERCENTS = [0, 5, 8, 10] as const
 export type SavePercent = (typeof SAVE_PERCENTS)[number]
 
 export function clampSavePercent(n: number): SavePercent {
-  if (n === 5 || n === 8 || n === 10) return n
+  if (n === 0 || n === 5 || n === 8 || n === 10) return n
   return 10
 }
 
